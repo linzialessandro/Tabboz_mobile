@@ -27,25 +27,9 @@
 
     <button class="save-manager-floating-btn" onclick="SaveManager.openModal()" title="Gestione Salvataggi">💾 Salvataggi</button>
     <div class="screen" id="screen"></div>
-    <script src="js/mobile-bridge.js?v=13"></script>
-    <script src="js/save-manager.js?v=13"></script>
+    <script src="js/mobile-bridge.js?v=14"></script>
+    <script src="js/save-manager.js?v=14"></script>
     <script type="text/javascript">
-    let gameStarted = false;
-    function tryStartGame() {
-        if (gameStarted) return;
-        const start = (typeof _WinMainStartup === 'function' ? _WinMainStartup : null) ||
-                      (typeof Module !== 'undefined' && typeof Module._WinMainStartup === 'function' ? Module._WinMainStartup : null);
-        if (typeof start === 'function') {
-            gameStarted = true;
-            console.log('[Tabboz] Starting WinMain...');
-            try {
-                start();
-            } catch (err) {
-                console.error('[Tabboz] Error executing WinMainStartup:', err);
-            }
-        }
-    }
-
     var Module = {
         locateFile: function(path, prefix) {
             if (path.endsWith('.wasm')) {
@@ -54,23 +38,18 @@
             return prefix + path;
         },
         onRuntimeInitialized: function() {
-            tryStartGame();
+            console.log('[Tabboz] Runtime initialized. Starting WinMain...');
+            setTimeout(() => {
+                if (typeof _WinMainStartup === 'function') {
+                    _WinMainStartup();
+                } else if (typeof Module._WinMainStartup === 'function') {
+                    Module._WinMainStartup();
+                }
+            }, 50);
         },
-        postRun: [function() {
-            tryStartGame();
-        }],
         print: (text) => console.log(text),
         printErr: (text) => console.error(text),
     };
-
-    // Fallback polling loop to guarantee startup regardless of device or network speed
-    const startInterval = setInterval(() => {
-        if (gameStarted) {
-            clearInterval(startInterval);
-        } else {
-            tryStartGame();
-        }
-    }, 50);
 
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('service-worker.js').then(reg => {
