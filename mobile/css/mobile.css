@@ -1,4 +1,4 @@
-/* Tabboz Simulator Mobile - Responsive Mobile Styling */
+/* Tabboz Simulator Mobile - Modern Mobile Touch-First Enhancements */
 
 html, body {
     margin: 0;
@@ -10,6 +10,8 @@ html, body {
     -webkit-tap-highlight-color: transparent;
     font-family: 'Pixelated MS Sans Serif', 'MS Sans Serif', Arial, sans-serif;
     touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 #screen {
@@ -26,6 +28,7 @@ html, body {
     justify-content: flex-start;
     padding: env(safe-area-inset-top, 8px) env(safe-area-inset-right, 6px) env(safe-area-inset-bottom, 8px) env(safe-area-inset-left, 6px);
     box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Modal Wall Backdrop */
@@ -38,20 +41,23 @@ html, body {
     background-color: rgba(0, 0, 0, 0.45);
     z-index: 40;
     display: none;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
 }
 
-/* Window Dialog Mobile Centering & Styling */
+/* Window Dialog Mobile Centering & Touch Optimization */
 .window {
     position: relative !important;
     left: auto !important;
     top: auto !important;
     margin: 8px auto !important;
     z-index: 20;
-    box-shadow: 2px 6px 20px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
     touch-action: manipulation;
     transform-origin: top center;
     max-width: calc(100vw - 12px);
     box-sizing: border-box;
+    border-radius: 4px;
 }
 
 /* MessageBox Fixed Modal Centering */
@@ -64,32 +70,73 @@ html, body {
     z-index: 100 !important;
     width: 320px !important;
     max-width: 90vw !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65) !important;
+}
+
+.window.messagebox .container {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.window.messagebox .content {
+    font-size: 14px;
+    line-height: 1.4;
+    color: #222;
+}
+
+.window.messagebox .field-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
 }
 
 /* Title bar touch optimization */
 .title-bar {
-    height: 28px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 6px;
+    padding: 0 8px;
     user-select: none;
     -webkit-user-select: none;
+    background: linear-gradient(90deg, #000080, #1084d0);
+    color: white;
+}
+
+.title-bar.inactive {
+    background: linear-gradient(90deg, #808080, #b5b5b5);
 }
 
 .title-bar-text {
     font-size: 13px;
     font-weight: bold;
+    letter-spacing: 0.5px;
 }
 
 .title-bar-controls button {
-    min-width: 22px;
-    min-height: 20px;
+    min-width: 26px;
+    min-height: 24px;
+    font-size: 14px;
+    line-height: 1;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+}
+
+.title-bar-controls button:active {
+    filter: brightness(0.85);
 }
 
 /* Menubar Touch Optimization */
+.menubar {
+    background: #c0c0c0;
+    border-bottom: 1px solid #808080;
+}
+
 .menubar ul.main-menu {
     display: flex;
     flex-wrap: wrap;
@@ -101,15 +148,24 @@ html, body {
 }
 
 .menubar ul.main-menu > li {
-    padding: 5px 10px;
+    padding: 6px 12px;
     cursor: pointer;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: bold;
+    border-radius: 2px;
+}
+
+.menubar ul.main-menu > li:active,
+.menubar ul.main-menu > li.active-menu {
+    background-color: #000080;
+    color: white;
 }
 
 .menubar ul.main-menu > li > ul {
     box-shadow: 2px 6px 14px rgba(0,0,0,0.35);
     z-index: 100;
+    background: #c0c0c0;
+    padding: 2px 0;
 }
 
 .menubar ul.main-menu > li > ul > li {
@@ -118,28 +174,88 @@ html, body {
     cursor: pointer;
 }
 
-/* Buttons Touch Sizing & Feedback */
+.menubar ul.main-menu > li > ul > li:active {
+    background-color: #000080;
+    color: white;
+}
+
+/* Enhanced Touch Targets for All Action Buttons */
 button, input[type="button"], input[type="submit"] {
     touch-action: manipulation;
     cursor: pointer;
-    -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+    -webkit-tap-highlight-color: transparent;
     font-family: inherit;
+    font-weight: bold;
+    min-height: 32px;
+    font-size: 13px;
+    border-radius: 3px;
+    transition: transform 0.08s ease, filter 0.08s ease;
 }
 
-button:active {
+button:active, input[type="button"]:active {
+    transform: scale(0.97);
     filter: brightness(0.92);
 }
 
-/* Form Controls */
+.button_ok, .button_cancel {
+    min-width: 72px;
+    min-height: 36px;
+    font-size: 14px;
+    padding: 4px 12px;
+}
+
+/* Checkboxes & Radio Touch Optimization (for Quizzes and Forms) */
+input[type="checkbox"], input[type="radio"] {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
+    cursor: pointer;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+label {
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1.4;
+    user-select: none;
+    -webkit-user-select: none;
+    vertical-align: middle;
+}
+
+/* Make entire option rows tappable on mobile */
+div:has(> input[type="checkbox"]),
+div:has(> input[type="radio"]) {
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background-color 0.1s ease;
+}
+
+div:has(> input[type="checkbox"]):active,
+div:has(> input[type="radio"]):active {
+    background-color: rgba(0, 128, 128, 0.15);
+}
+
+/* Text Inputs & Dropdowns */
 input[type="text"], select {
     font-size: 14px;
+    height: 32px;
+    padding: 0 8px;
     box-sizing: border-box;
 }
 
-input[type="radio"], input[type="checkbox"] {
+/* Interactive Bitmap Images (Shops, Catalogues, etc.) */
+img.dlg_item {
     cursor: pointer;
-    min-width: 18px;
-    min-height: 18px;
+    transition: transform 0.1s ease, filter 0.1s ease;
+    border-radius: 2px;
+}
+
+img.dlg_item:active {
+    transform: scale(0.96);
+    filter: brightness(0.9);
 }
 
 /* Loading Screen */

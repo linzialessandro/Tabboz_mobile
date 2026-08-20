@@ -530,42 +530,55 @@
     }
 
     function eventHandler(event) {
-        const match = event.target.className.match(/\d+/);
+        let target = event.target;
+        // If clicking a label, find the associated input
+        if (target.tagName === 'LABEL' && target.htmlFor) {
+            const input = document.getElementById(target.htmlFor);
+            if (input) target = input;
+        } else if (!target.className.match(/\d+/) && target.closest('.dlg_item')) {
+            target = target.closest('.dlg_item');
+        }
+
+        const match = target.className ? target.className.match(/\d+/) : null;
+        const activeHwnd = _activeWindowHwnd;
+
         switch (event.type) {
             case 'click':
-                if (match) {
+                if (match && activeHwnd !== null && activeHwnd !== undefined) {
                     const message = WM_COMMAND;
                     const wParam = Number(match[0]);
                     const lParam = calculateClickPosition(event);
-                    if (_activeWindowHwnd && typeof _PostMessage === 'function') {
-                        _PostMessage(_activeWindowHwnd, message, wParam, lParam);
+                    if (typeof _PostMessage === 'function') {
+                        _PostMessage(activeHwnd, message, wParam, lParam);
                     }
                 }
                 break;
             case 'input':
-                if (match && !isCheckbox(event.target)) {
+                if (match && !isCheckbox(target) && activeHwnd !== null && activeHwnd !== undefined) {
                     const message = WM_COMMAND;
                     const wParam = Number(match[0]);
                     const lParam = 0;
-                    if (_activeWindowHwnd && typeof _PostMessage === 'function') {
-                        _PostMessage(_activeWindowHwnd, message, wParam, lParam);
+                    if (typeof _PostMessage === 'function') {
+                        _PostMessage(activeHwnd, message, wParam, lParam);
                     }
                 }
                 break;
             case 'keydown':
-                if (event.keyCode === 27) { // ESC
-                    const message = WM_KEYDOWN;
-                    const wParam = VK_ESCAPE;
-                    const lParam = 0;
-                    if (_activeWindowHwnd && typeof _PostMessage === 'function') {
-                        _PostMessage(_activeWindowHwnd, message, wParam, lParam);
-                    }
-                } else if (event.target.nodeName === "BUTTON" && event.keyCode === 13 && match) {
-                    const message = WM_COMMAND;
-                    const wParam = Number(match[0]);
-                    const lParam = 0;
-                    if (_activeWindowHwnd && typeof _PostMessage === 'function') {
-                        _PostMessage(_activeWindowHwnd, message, wParam, lParam);
+                if (activeHwnd !== null && activeHwnd !== undefined) {
+                    if (event.keyCode === 27) { // ESC
+                        const message = WM_KEYDOWN;
+                        const wParam = VK_ESCAPE;
+                        const lParam = 0;
+                        if (typeof _PostMessage === 'function') {
+                            _PostMessage(activeHwnd, message, wParam, lParam);
+                        }
+                    } else if (target.nodeName === "BUTTON" && event.keyCode === 13 && match) {
+                        const message = WM_COMMAND;
+                        const wParam = Number(match[0]);
+                        const lParam = 0;
+                        if (typeof _PostMessage === 'function') {
+                            _PostMessage(activeHwnd, message, wParam, lParam);
+                        }
                     }
                 }
                 break;
