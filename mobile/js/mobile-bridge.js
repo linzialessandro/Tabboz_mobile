@@ -1,12 +1,10 @@
-/*
- * Tabboz Simulator Mobile — Bridge Layer
- * Replaces novantotto.js for mobile-first rendering
- *
- * Copyright (c) 2024 — GPL v3
+/**
+ * Tabboz Simulator Mobile - Mobile Bridge
+ * Faithful Win32 Emulation Bridge for Emscripten / WebAssembly
+ * Based directly on novantotto.js with mobile touch ergonomics.
  */
 
 ((exports) => {
-
     // =========================================================================
     // Global State (matching novantotto.js exact contracts)
     // =========================================================================
@@ -554,44 +552,56 @@
         }
 
         const match = target.className ? target.className.match(/\d+/) : null;
-        const activeHwnd = _activeWindowHwnd;
+
+        // Determine target window handle: prioritize the window containing the clicked element
+        let targetHwnd = _activeWindowHwnd;
+        const clickedWin = target.closest('.window');
+        if (clickedWin && clickedWin.id) {
+            const m = clickedWin.id.match(/\d+/);
+            if (m) {
+                targetHwnd = Number(m[0]);
+                if (targetHwnd !== _activeWindowHwnd) {
+                    setActiveWindow(targetHwnd);
+                }
+            }
+        }
 
         switch (event.type) {
             case 'click':
-                if (match && activeHwnd !== null && activeHwnd !== undefined) {
+                if (match && targetHwnd !== null && targetHwnd !== undefined) {
                     const message = WM_COMMAND;
                     const wParam = Number(match[0]);
                     const lParam = calculateClickPosition(event);
                     if (typeof _PostMessage === 'function') {
-                        _PostMessage(activeHwnd, message, wParam, lParam);
+                        _PostMessage(targetHwnd, message, wParam, lParam);
                     }
                 }
                 break;
             case 'input':
-                if (match && !isCheckbox(target) && activeHwnd !== null && activeHwnd !== undefined) {
+                if (match && !isCheckbox(target) && targetHwnd !== null && targetHwnd !== undefined) {
                     const message = WM_COMMAND;
                     const wParam = Number(match[0]);
                     const lParam = 0;
                     if (typeof _PostMessage === 'function') {
-                        _PostMessage(activeHwnd, message, wParam, lParam);
+                        _PostMessage(targetHwnd, message, wParam, lParam);
                     }
                 }
                 break;
             case 'keydown':
-                if (activeHwnd !== null && activeHwnd !== undefined) {
+                if (targetHwnd !== null && targetHwnd !== undefined) {
                     if (event.keyCode === 27) { // ESC
                         const message = WM_KEYDOWN;
                         const wParam = VK_ESCAPE;
                         const lParam = 0;
                         if (typeof _PostMessage === 'function') {
-                            _PostMessage(activeHwnd, message, wParam, lParam);
+                            _PostMessage(targetHwnd, message, wParam, lParam);
                         }
                     } else if (target.nodeName === "BUTTON" && event.keyCode === 13 && match) {
                         const message = WM_COMMAND;
                         const wParam = Number(match[0]);
                         const lParam = 0;
                         if (typeof _PostMessage === 'function') {
-                            _PostMessage(activeHwnd, message, wParam, lParam);
+                            _PostMessage(targetHwnd, message, wParam, lParam);
                         }
                     }
                 }

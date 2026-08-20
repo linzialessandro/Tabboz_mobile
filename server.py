@@ -15,6 +15,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         super().end_headers()
 
+    def translate_path(self, path):
+        # Normalize /mobile/resources/ to /resources/
+        if path.startswith('/mobile/resources/'):
+            path = path[len('/mobile'):]
+        return super().translate_path(path)
+
     def guess_type(self, path):
         if path.endswith('.wasm'):
             return 'application/wasm'

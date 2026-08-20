@@ -20,15 +20,12 @@ html, body {
     height: 100dvh;
     background-color: #008080;
     position: relative;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: hidden;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     padding: env(safe-area-inset-top, 8px) env(safe-area-inset-right, 6px) env(safe-area-inset-bottom, 8px) env(safe-area-inset-left, 6px);
     box-sizing: border-box;
-    -webkit-overflow-scrolling: touch;
 }
 
 /* Modal Wall Backdrop */
@@ -38,37 +35,37 @@ html, body {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.35);
-    z-index: 10;
+    background-color: rgba(0, 0, 0, 0.45);
+    z-index: 30;
     display: none;
 }
 
 /* Window Dialog Mobile Centering & Touch Optimization */
 .window {
-    position: relative !important;
-    left: auto !important;
-    top: auto !important;
-    margin: 8px auto !important;
-    z-index: 20;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-    touch-action: manipulation;
-    transform-origin: top center;
-    max-width: calc(100vw - 12px);
-    box-sizing: border-box;
-    border-radius: 4px;
-}
-
-/* MessageBox Fixed Modal Centering */
-.window.messagebox {
-    position: fixed !important;
-    top: 40% !important;
+    position: absolute !important;
     left: 50% !important;
+    top: 50% !important;
     transform: translate(-50%, -50%) !important;
     margin: 0 !important;
+    z-index: 20;
+    box-shadow: 0 10px 36px rgba(0, 0, 0, 0.65);
+    touch-action: manipulation;
+    max-width: calc(100vw - 12px);
+    max-height: calc(100dvh - 16px);
+    box-sizing: border-box;
+}
+
+/* Active window sits in front of the modal wall */
+.window:not(.messagebox) {
+    z-index: 40;
+}
+
+/* MessageBox Fixed Modal Centering on top of everything */
+.window.messagebox {
     z-index: 100 !important;
     width: 320px !important;
     max-width: 90vw !important;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65) !important;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.75) !important;
 }
 
 .window.messagebox .container {
