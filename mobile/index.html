@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#008080">
+    <meta name="description" content="Tabboz Simulator - Versione Mobile">
+    <meta property="og:title" content="Tabboz Simulator">
+    <meta property="og:description" content="Il simulatore di vita del tabbozzo milanese - Versione Mobile">
+    <meta property="og:type" content="website">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="icon" type="image/x-icon" href="../resources/icons/1.ico">
+    <link rel="stylesheet" href="css/mobile.css">
+    <title>Tabboz Simulator</title>
+</head>
+<body>
+    <div id="app">
+        <div id="loading-screen" class="loading-screen">
+            <div class="loading-content">
+                <div class="loading-title">Tabboz Simulator</div>
+                <div class="loading-subtitle">Versione Mobile</div>
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Caricamento...</div>
+            </div>
+        </div>
+        <div id="screen"></div>
+    </div>
+    <script src="js/mobile-bridge.js"></script>
+    <script>
+        var Module = {
+            postRun: () => {
+                if (typeof MobileBridge !== 'undefined' && MobileBridge.startGame) {
+                    MobileBridge.startGame();
+                } else {
+                    const loader = document.getElementById('loading-screen');
+                    if (loader) loader.style.display = 'none';
+                }
+            },
+            print: (text) => console.log(text),
+            printErr: (text) => console.error(text),
+        };
+    </script>
+    <script async src="../zarrosim.js"></script>
+    <script>
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(reg => console.log('SW registered:', reg.scope))
+                    .catch(err => console.error('SW registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>
