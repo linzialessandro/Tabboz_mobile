@@ -208,6 +208,7 @@
     // =========================================================================
 
     function setActiveWindow(hWnd) {
+        console.log('[setActiveWindow] setting active window:', hWnd);
         _activeWindowHwnd = hWnd;
         document.querySelectorAll(".window").forEach(w => {
             w.style.zIndex = '20';
@@ -475,11 +476,24 @@
     }
 
     function destroyWindow(hWnd) {
-        const destination = document.getElementById('screen');
+        console.log('[destroyWindow] destroying window:', hWnd);
         const wall = document.getElementById('wall' + hWnd);
         const win = document.getElementById('win' + hWnd);
-        if (wall && wall.parentNode) destination.removeChild(wall);
-        if (win && win.parentNode) destination.removeChild(win);
+        if (wall) wall.remove();
+        if (win) win.remove();
+
+        // Always activate the top visible remaining window
+        const remainingWindows = Array.from(document.querySelectorAll('#screen .window')).filter(w => w.style.display !== 'none');
+        console.log('[destroyWindow] remaining windows count:', remainingWindows.length, remainingWindows.map(w => w.id));
+        if (remainingWindows.length > 0) {
+            const topWin = remainingWindows[remainingWindows.length - 1];
+            const match = topWin.id.match(/\d+/);
+            if (match) {
+                setActiveWindow(Number(match[0]));
+            }
+        } else {
+            _activeWindowHwnd = null;
+        }
     }
 
     function loadString(uID, lpBuffer, cchBufferMax) {
