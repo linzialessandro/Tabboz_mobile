@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tabboz-mobile-v1';
+const CACHE_NAME = 'tabboz-mobile-v4';
 
 const PRECACHE_URLS = [
   './index.html',
@@ -30,6 +30,8 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+
   const url = new URL(event.request.url);
   
   // Cache-first strategy for assets

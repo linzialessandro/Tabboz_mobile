@@ -5,6 +5,18 @@
 
 Simply tap the icon to launch the Tabboz Simulator directly in your browser.
 
+## 📱 Mobile PWA
+
+The mobile-first web app is available at [`/mobile/`](mobile/). It keeps the
+original C/WebAssembly game engine and its Win32 control IDs intact; only the
+browser bridge turns the original dialogs into touch-friendly screens. This
+means game rules, events, choices, persistence and progression remain those of
+the original game.
+
+For GitHub Pages, enable **GitHub Actions** as the Pages source. The included
+workflow publishes the repository on every push to `main`; the mobile entry
+point is `https://linzialessandro.github.io/Tabboz_mobile/mobile/`.
+
 ## 🖥️ Web development
 
 <div align="center">
@@ -49,3 +61,9 @@ make format
 ## ⚖️ LICENSE
 
 [![GPL 3](https://www.gnu.org/graphics/gplv3-or-later.png)](https://www.gnu.org/licenses/gpl-3.0.en.html)
+
+This fork remains distributed under GPL-3.0, as supplied in
+[`LICENSE`](LICENSE). The mobile bridge adapts the original Novantotto bridge,
+which is available under MPL-2.0; its source notice is retained in
+[`mobile/js/mobile-bridge.js`](mobile/js/mobile-bridge.js). Original authorship
+and the upstream project are credited throughout the source.
