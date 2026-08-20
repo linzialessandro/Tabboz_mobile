@@ -2920,21 +2920,30 @@
         document.getElementById('screen').appendChild(element);
     }
 
-    function addDesktopIcon(name, icon, title) {
-        console.log('[Tabboz] System initialized by main(). Launching WinMainStartup...');
+    let _gameStarted = false;
+    function startGame() {
+        if (_gameStarted) return;
+        _gameStarted = true;
+        console.log('[Tabboz] Launching WinMainStartup...');
         setTimeout(() => {
             if (typeof _WinMainStartup === 'function') {
                 _WinMainStartup();
             } else if (typeof Module !== 'undefined' && typeof Module._WinMainStartup === 'function') {
                 Module._WinMainStartup();
             }
-        }, 10);
+        }, 50);
+    }
+
+    function addDesktopIcon(name, icon, title) {
+        console.log('[Tabboz] System initialized by main(). Launching WinMainStartup...');
+        startGame();
     }
     function makeDraggable(element) {}
 
     // =========================================================================
     // Exports
     // =========================================================================
+    exports.startGame = startGame;
     exports.addDesktopIcon = addDesktopIcon;
     exports.addMainMenu = addMainMenu;
     exports.addMenuToWindow = addMenuToWindow;

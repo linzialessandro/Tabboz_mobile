@@ -12,7 +12,7 @@
     <link rel="icon" type="image/x-icon" href="../resources/icons/1.ico">
     <link rel="stylesheet" href="../resources/css/98.css">
     <link rel="stylesheet" href="../resources/css/novantotto.css">
-    <link rel="stylesheet" href="css/mobile.css?v=17">
+    <link rel="stylesheet" href="css/mobile.css?v=18">
     <title>Tabboz Mobile</title>
 </head>
 <body>
@@ -27,8 +27,8 @@
 
     <button class="save-manager-floating-btn" onclick="SaveManager.openModal()" title="Gestione Salvataggi">💾 Salvataggi</button>
     <div class="screen" id="screen"></div>
-    <script src="js/mobile-bridge.js?v=17"></script>
-    <script src="js/save-manager.js?v=17"></script>
+    <script src="js/mobile-bridge.js?v=18"></script>
+    <script src="js/save-manager.js?v=18"></script>
     <script type="text/javascript">
     var Module = {
         locateFile: function(path, prefix) {
@@ -37,6 +37,11 @@
             }
             return prefix + path;
         },
+        postRun: [function() {
+            if (typeof startGame === 'function') {
+                startGame();
+            }
+        }],
         print: (text) => console.log(text),
         printErr: (text) => console.error(text),
     };
@@ -50,6 +55,6 @@
         });
     }
     </script>
-    <script type="text/javascript" src="../zarrosim.js?v=17"></script>
+    <script type="text/javascript" src="../zarrosim.js?v=18"></script>
 </body>
 </html>
