@@ -650,14 +650,18 @@
         const infoCard = document.createElement('div');
         infoCard.className = 'about-info-card';
         infoCard.innerHTML = `
-            <div class="about-title">Tabboz Simulator Mobile</div>
+            <div class="about-title">Tabboz Mobile</div>
             <div class="about-version">Versione 0.92q (PWA Modern Edition)</div>
             <div class="about-section">
-                <div class="about-heading">Created by:</div>
+                <div class="about-heading">Versione Mobile creata da:</div>
+                <div class="about-text">Alessandro Linzi</div>
+            </div>
+            <div class="about-section">
+                <div class="about-heading">Autori originali del Tabboz Simulator:</div>
                 <div class="about-text">Andrea Bonomi & Emanuele Caccialanza</div>
             </div>
             <div class="about-section">
-                <div class="about-heading">Beta testers:</div>
+                <div class="about-heading">Beta testers originali:</div>
                 <div class="about-text">Daniele Gazzarri, Dino Lucci, Giulio Lucci</div>
             </div>
             <div class="about-warning">
@@ -668,14 +672,21 @@
 
         if (btnNorme) {
             resetElement(btnNorme);
-            btnNorme.className = 'mobile-btn secondary';
+            btnNorme.className = 'dlg_item control113 mobile-btn secondary';
             btnNorme.innerHTML = '📜 Norme di utilizzo';
+            btnNorme.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (typeof _PostMessage === 'function') {
+                    _PostMessage(_activeWindowHwnd, WM_COMMAND, 113, 0);
+                }
+                stopWaiting();
+            });
             container.appendChild(btnNorme);
         }
 
         if (btnOk) {
             resetElement(btnOk);
-            btnOk.className += ' button_ok';
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
             btnOk.innerHTML = '✓ Chiudi';
             const bar = document.createElement('div');
             bar.className = 'mobile-bottom-bar';
@@ -2502,6 +2513,137 @@
         body.appendChild(container);
     }
 
+    function transformExitSession(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const icon = body.querySelector('img[src*="ZSPEGNIMI"]') || body.querySelector('img');
+        const radioClose = body.querySelector('input.control101') || body.querySelector('input[type="radio"]');
+        const radioShutdown = body.querySelector('input.control102');
+        const btnHelp = body.querySelector('button.control110') || body.querySelector('.control110');
+        const btnCancel = body.querySelector('button.control2') || body.querySelector('.control2');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1') || body.querySelector('.control1');
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-exit-view';
+
+        // Header Card
+        const headerCard = document.createElement('div');
+        headerCard.className = 'exit-header-card';
+        if (icon) {
+            resetElement(icon);
+            icon.className = 'exit-icon';
+            headerCard.appendChild(icon);
+        }
+        const promptEl = document.createElement('div');
+        promptEl.className = 'exit-prompt-text';
+        promptEl.innerText = 'Scegli cosa vuoi fare:';
+        headerCard.appendChild(promptEl);
+        container.appendChild(headerCard);
+
+        // Options List Card
+        const optionsCard = document.createElement('div');
+        optionsCard.className = 'exit-options-card';
+
+        // Option 1: Chiudi il Tabboz Simulator
+        const opt1 = document.createElement('div');
+        opt1.className = 'exit-option-card active';
+        opt1.dataset.controlId = '101';
+        const radio1 = radioClose || document.createElement('input');
+        resetElement(radio1);
+        radio1.type = 'radio';
+        radio1.name = 'bor_radio16';
+        radio1.checked = true;
+        radio1.className = 'dlg_item control101 exit-radio-input';
+        
+        opt1.innerHTML = `
+            <div class="exit-radio-indicator checked"></div>
+            <div class="exit-option-content">
+                <div class="exit-option-title">🚪 Chiudi il Tabboz Simulator</div>
+                <div class="exit-option-desc">Salva i progressi della partita ed esci dal simulatore.</div>
+            </div>
+        `;
+        opt1.prepend(radio1);
+        optionsCard.appendChild(opt1);
+
+        // Option 2: Spegni il computer ed esci di casa
+        const opt2 = document.createElement('div');
+        opt2.className = 'exit-option-card';
+        opt2.dataset.controlId = '102';
+        const radio2 = radioShutdown || document.createElement('input');
+        resetElement(radio2);
+        radio2.type = 'radio';
+        radio2.name = 'bor_radio16';
+        radio2.checked = false;
+        radio2.className = 'dlg_item control102 exit-radio-input';
+
+        opt2.innerHTML = `
+            <div class="exit-radio-indicator"></div>
+            <div class="exit-option-content">
+                <div class="exit-option-title">⚡ Spegni il computer ed esci di casa</div>
+                <div class="exit-option-desc">Pubblicità Progresso per il recupero dei giovani disadattati.</div>
+            </div>
+        `;
+        opt2.prepend(radio2);
+        optionsCard.appendChild(opt2);
+
+        container.appendChild(optionsCard);
+
+        // Interactive Selection Logic
+        function selectOption(controlId) {
+            const isOpt1 = controlId === 101;
+            radio1.checked = isOpt1;
+            radio2.checked = !isOpt1;
+            opt1.classList.toggle('active', isOpt1);
+            opt2.classList.toggle('active', !isOpt1);
+            opt1.querySelector('.exit-radio-indicator').classList.toggle('checked', isOpt1);
+            opt2.querySelector('.exit-radio-indicator').classList.toggle('checked', !isOpt1);
+
+            if (typeof _PostMessage === 'function') {
+                _PostMessage(_activeWindowHwnd, WM_COMMAND, controlId, 0);
+            }
+            stopWaiting();
+        }
+
+        opt1.addEventListener('click', () => selectOption(101));
+        opt2.addEventListener('click', () => selectOption(102));
+
+        // Help button
+        if (btnHelp) {
+            resetElement(btnHelp);
+            btnHelp.className = 'dlg_item control110 exit-help-btn';
+            btnHelp.innerHTML = 'ℹ️ Info: Spegni il computer ed esci di casa';
+            btnHelp.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (typeof _PostMessage === 'function') {
+                    _PostMessage(_activeWindowHwnd, WM_COMMAND, 110, 0);
+                }
+                stopWaiting();
+            });
+            container.appendChild(btnHelp);
+        }
+
+        // Action Buttons Bar
+        const bar = document.createElement('div');
+        bar.className = 'mobile-bottom-bar';
+        if (btnCancel) {
+            resetElement(btnCancel);
+            btnCancel.className = 'dlg_item control2 mobile-btn secondary';
+            btnCancel.innerHTML = 'Annulla';
+            bar.appendChild(btnCancel);
+        }
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
+            btnOk.innerHTML = '✓ Conferma';
+            bar.appendChild(btnOk);
+        }
+        container.appendChild(bar);
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
     function transformGeneric(win) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
@@ -2600,6 +2742,8 @@
                 transformPagella(win);
             } else if ((dialogNum >= 100 && dialogNum <= 107) || dialogNum === 96) {
                 transformEventBeatdown(win);
+            } else if (dialogNum === 16) {
+                transformExitSession(win);
             } else if (dialogNum === 12) {
                 transformSplash(win);
             } else {

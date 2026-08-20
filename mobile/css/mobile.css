@@ -1429,6 +1429,128 @@ button:active, input[type="button"]:active {
     border-radius: 6px !important;
 }
 
+/* Exit Session Modern View (Dialog 16) */
+.mobile-exit-view {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    padding: 16px 16px 32px 16px !important;
+    width: 100% !important;
+}
+
+.exit-header-card {
+    background: #ffffff !important;
+    border-radius: 14px !important;
+    padding: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 14px !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+.exit-icon {
+    width: 42px !important;
+    height: 42px !important;
+    object-fit: contain !important;
+}
+
+.exit-prompt-text {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #1e293b !important;
+}
+
+.exit-options-card {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    width: 100% !important;
+}
+
+.exit-option-card {
+    background: #ffffff !important;
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 14px !important;
+    padding: 14px 16px !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 14px !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    user-select: none !important;
+}
+
+.exit-option-card.active {
+    border-color: #008080 !important;
+    background: #f0fdfa !important;
+    box-shadow: 0 3px 10px rgba(0, 128, 128, 0.1) !important;
+}
+
+.exit-radio-input {
+    display: none !important;
+}
+
+.exit-radio-indicator {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    border-radius: 50% !important;
+    border: 2px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    margin-top: 2px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.15s ease !important;
+}
+
+.exit-radio-indicator.checked {
+    border-color: #008080 !important;
+    background: #008080 !important;
+}
+
+.exit-radio-indicator.checked::after {
+    content: '' !important;
+    width: 8px !important;
+    height: 8px !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    display: block !important;
+}
+
+.exit-option-content {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+}
+
+.exit-option-title {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+}
+
+.exit-option-desc {
+    font-size: 13px !important;
+    color: #64748b !important;
+    line-height: 1.4 !important;
+}
+
+.exit-help-btn {
+    background: #f8fafc !important;
+    border: 1px dashed #94a3b8 !important;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #475569 !important;
+    text-align: center !important;
+    cursor: pointer !important;
+    width: 100% !important;
+}
+
 /* Job Quiz Modern View (200-209) */
 .mobile-quiz-view {
     display: flex !important;
