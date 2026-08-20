@@ -28,16 +28,10 @@ html, body {
     box-sizing: border-box;
 }
 
-/* Modal Wall Backdrop */
+/* Modal Wall Backdrop - Non blocking on mobile */
 .wall {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.45);
-    z-index: 30;
-    display: none;
+    display: none !important;
+    pointer-events: none !important;
 }
 
 /* Window Dialog Mobile Centering & Scaling */

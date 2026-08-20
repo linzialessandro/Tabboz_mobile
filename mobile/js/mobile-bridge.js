@@ -521,6 +521,7 @@
             const match = topWin.id.match(/\d+/);
             if (match) {
                 setActiveWindow(Number(match[0]));
+                centerWindow(topWin);
             }
         } else {
             _activeWindowHwnd = null;
