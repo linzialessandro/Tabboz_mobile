@@ -284,7 +284,9 @@
         if (element != null) {
             const iconName = UTF8ToString(icon);
             const src = `${RESOURCE_BASE}/icons/${iconName}.gif`;
-            element.innerHTML = `<img src="${src}" height="18" style="vertical-align:middle; margin-right:6px;" />` + element.innerText;
+            const isDashboard = element.closest('.dlg-1') !== null;
+            const text = isDashboard ? 'Tabboz Mobile' : element.innerText;
+            element.innerHTML = `<img src="${src}" height="18" style="vertical-align:middle; margin-right:6px;" />` + text;
         }
     }
 
@@ -519,6 +521,13 @@
 
         const container = document.createElement('div');
         container.className = 'mobile-dashboard-container';
+
+        // Set top header title specifically to "Tabboz Mobile"
+        const titleText = win.querySelector('.title-bar-text');
+        if (titleText) {
+            const hasIcon = titleText.querySelector('img');
+            titleText.innerHTML = (hasIcon ? hasIcon.outerHTML : '<img src="../resources/icons/1.gif" height="18" style="vertical-align:middle; margin-right:6px;" />') + 'Tabboz Mobile';
+        }
 
         const headerCard = document.createElement('div');
         headerCard.className = 'dashboard-header-card';
