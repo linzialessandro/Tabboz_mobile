@@ -253,6 +253,214 @@ img.dlg_item:active {
     filter: brightness(0.9);
 }
 
+/* ==========================================================================
+   Save Manager Modal & Floating Button Styles
+   ========================================================================== */
+
+.save-manager-floating-btn {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 8px) + 6px);
+    right: calc(env(safe-area-inset-right, 6px) + 8px);
+    z-index: 990;
+    background: #c0c0c0;
+    border: 2px outset #ffffff;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: bold;
+    color: #000;
+    cursor: pointer;
+    border-radius: 3px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.save-manager-floating-btn:active {
+    border-style: inset;
+    transform: scale(0.96);
+}
+
+.save-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+.save-modal-window {
+    width: min(94vw, 440px) !important;
+    max-height: 90vh !important;
+    display: flex;
+    flex-direction: column;
+    z-index: 1010 !important;
+}
+
+.save-modal-body {
+    padding: 12px !important;
+    overflow-y: auto !important;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-sizing: border-box;
+}
+
+.current-state-card {
+    background: #f0f0f0;
+    border: 2px inset #ffffff;
+    padding: 10px 12px;
+    border-radius: 2px;
+}
+
+.current-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: bold;
+    color: #008080;
+    margin-bottom: 4px;
+}
+
+.current-info {
+    font-size: 13px;
+    line-height: 1.4;
+    color: #111;
+}
+
+.save-section-title {
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #333;
+    margin-top: 4px;
+}
+
+.slots-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.save-slot-card {
+    background: #ffffff;
+    border: 2px inset #c0c0c0;
+    padding: 8px 10px;
+    border-radius: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.save-slot-card.empty {
+    background: #e8e8e8;
+    border: 1px dashed #888;
+}
+
+.slot-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.slot-badge {
+    background: #000080;
+    color: #fff;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 2px;
+}
+
+.slot-time {
+    font-size: 11px;
+    color: #666;
+}
+
+.slot-empty-label {
+    font-size: 12px;
+    color: #777;
+    font-style: italic;
+}
+
+.slot-body {
+    font-size: 12px;
+    line-height: 1.4;
+    color: #222;
+}
+
+.slot-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.btn-slot-load, .btn-slot-save, .btn-slot-del, .btn-tool {
+    background: #c0c0c0;
+    border: 2px outset #ffffff;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 2px;
+    touch-action: manipulation;
+}
+
+.btn-slot-load {
+    background: #d4e6f1;
+    color: #000080;
+    flex: 1;
+}
+
+.btn-slot-save {
+    flex: 1;
+}
+
+.btn-slot-save.full {
+    width: 100%;
+}
+
+.btn-slot-del {
+    background: #fadbd8;
+    color: #c0392b;
+    padding: 4px 8px;
+}
+
+.btn-slot-load:active, .btn-slot-save:active, .btn-slot-del:active, .btn-tool:active {
+    border-style: inset;
+}
+
+.save-tools-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.btn-tool {
+    padding: 8px 12px;
+    font-size: 13px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-tool.file-btn {
+    margin: 0;
+}
+
+.btn-tool.btn-danger {
+    background: #f5b7b1;
+    color: #900c3f;
+}
+
 /* Loading Screen */
 .loading-screen {
     position: fixed;

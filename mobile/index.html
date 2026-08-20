@@ -16,8 +16,10 @@
     <title>Tabboz Simulator Mobile</title>
 </head>
 <body>
+    <button class="save-manager-floating-btn" onclick="SaveManager.openModal()" title="Gestione Salvataggi">💾 Salvataggi</button>
     <div class="screen" id="screen"></div>
     <script src="js/mobile-bridge.js"></script>
+    <script src="js/save-manager.js"></script>
     <script type="text/javascript">
     var Module = {
         postRun: () => {
