@@ -1629,21 +1629,13 @@
         startBtn.innerHTML = '⚡ TOCCA PER GIOCARE ⚡';
         container.appendChild(startBtn);
 
-        let dismissed = false;
-        function dismissSplash(e) {
-            if (dismissed) return;
-            dismissed = true;
-            if (typeof _PostMessage === 'function') {
-                _PostMessage(_activeWindowHwnd, WM_COMMAND, 202, 0);
-            }
-            stopWaiting();
-        }
-
-        startBtn.addEventListener('click', dismissSplash);
-        if (img) img.addEventListener('click', dismissSplash);
         container.addEventListener('click', (e) => {
-            if (e.target !== img && e.target !== startBtn) {
-                dismissSplash(e);
+            if (!e.target.closest('.control202')) {
+                e.stopPropagation();
+                if (typeof _PostMessage === 'function') {
+                    _PostMessage(_activeWindowHwnd, WM_COMMAND, 202, 0);
+                }
+                stopWaiting();
             }
         });
 
