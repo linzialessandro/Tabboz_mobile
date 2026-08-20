@@ -292,6 +292,50 @@ button:active, input[type="button"]:active {
     filter: brightness(0.9) !important;
 }
 
+.mobile-btn {
+    touch-action: manipulation;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 15px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    box-sizing: border-box;
+    transition: transform 0.08s ease, filter 0.08s ease;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.mobile-btn.primary {
+    background: linear-gradient(135deg, #008080 0%, #005959 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid #004d4d !important;
+    box-shadow: 0 3px 8px rgba(0, 128, 128, 0.3) !important;
+}
+
+.mobile-btn.secondary {
+    background: #ffffff !important;
+    color: #008080 !important;
+    border: 1.5px solid #008080 !important;
+    box-shadow: 0 2px 6px rgba(0, 128, 128, 0.1) !important;
+}
+
+.mobile-btn.danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid #b91c1c !important;
+    box-shadow: 0 3px 8px rgba(220, 38, 38, 0.3) !important;
+}
+
+.mobile-btn:active {
+    transform: scale(0.97) !important;
+    filter: brightness(0.92) !important;
+}
+
 /* ==========================================================================
    Dashboard (Dialog 1) Mobile-Native Layout
    ========================================================================== */
@@ -946,25 +990,275 @@ button:active, input[type="button"]:active {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* Palestra (Gym) Modern View */
-.palestra-actions-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 100%;
+/* ==========================================================================
+   PALESTRA (Gym) Modern View
+   ========================================================================== */
+.mobile-palestra-view {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    padding: 12px 14px 32px 14px !important;
 }
 
-.palestra-actions-list button {
+.palestra-stats-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+
+.palestra-stat-card {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 10px 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid #e2e8f0 !important;
+    min-height: 52px !important;
+}
+
+.palestra-stat-card.stat-soldi {
+    background: #fefce8 !important;
+    border-color: #fef08a !important;
+}
+
+.palestra-stat-card.stat-figosita {
+    background: #fdf2f8 !important;
+    border-color: #fbcfe8 !important;
+}
+
+.palestra-stat-card .stat-icon {
+    font-size: 22px !important;
+    line-height: 1 !important;
+}
+
+.palestra-stat-card small {
+    font-size: 10px !important;
+    text-transform: uppercase !important;
+    font-weight: 800 !important;
+    color: #6b7280 !important;
+    display: block !important;
+    letter-spacing: 0.5px !important;
+}
+
+.palestra-stat-card .dlg_item {
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    color: #111827 !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    width: auto !important;
+    height: auto !important;
+    text-align: left !important;
+}
+
+.palestra-stat-card.stat-soldi .dlg_item {
+    color: #854d0e !important;
+}
+
+.palestra-stat-card.stat-figosita .dlg_item {
+    color: #9d174d !important;
+}
+
+.palestra-hero-card {
+    width: 100% !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+    display: flex !important;
+    justify-content: center !important;
+    border: 2px solid #b0c2c2 !important;
+}
+
+.palestra-hero-card img {
+    width: 100% !important;
+    max-height: 180px !important;
+    object-fit: contain !important;
+    background: #f8fafc !important;
+}
+
+.palestra-section {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+
+.palestra-section-title {
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    color: #006666 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.palestra-workout-card {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 14px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    border: 2px solid #008080 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+}
+
+.palestra-workout-btn {
     width: 100% !important;
     height: 52px !important;
     min-height: 52px !important;
-    border-radius: 12px !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    background: linear-gradient(135deg, #008080, #005959) !important;
+    color: #ffffff !important;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 10px rgba(0, 128, 128, 0.3) !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.palestra-card-hint {
+    font-size: 12px !important;
+    color: #6b7280 !important;
+    text-align: center !important;
+    font-weight: 600 !important;
+}
+
+.palestra-sub-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+
+.palestra-sub-card {
     background: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 12px 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 6px !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid #e2e8f0 !important;
+    position: relative !important;
+}
+
+.palestra-sub-card.featured {
+    border: 2px solid #008080 !important;
+    background: #f0fdfa !important;
+}
+
+.sub-badge {
+    position: absolute !important;
+    top: -8px !important;
+    background: #008080 !important;
+    color: #ffffff !important;
+    font-size: 8px !important;
+    font-weight: 800 !important;
+    padding: 2px 6px !important;
+    border-radius: 6px !important;
+    letter-spacing: 0.5px !important;
+}
+
+.sub-duration {
+    font-size: 13px !important;
+    font-weight: 800 !important;
     color: #1f2937 !important;
-    font-size: 15px !important;
+}
+
+.sub-icon {
+    font-size: 22px !important;
+}
+
+.sub-price,
+.palestra-sub-card .dlg_item {
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    color: #008080 !important;
+    min-height: 18px !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    text-align: center !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+.sub-btn {
+    width: 100% !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 0 !important;
+    font-size: 12px !important;
     font-weight: 700 !important;
-    border: 1px solid #d1d5db !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+    border-radius: 8px !important;
+}
+
+.palestra-lampada-card {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 14px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid #e2e8f0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+}
+
+.lampada-info {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+}
+
+.lampada-title {
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    color: #1f2937 !important;
+}
+
+.lampada-desc {
+    font-size: 12px !important;
+    color: #6b7280 !important;
+}
+
+.lampada-price,
+.palestra-lampada-card .dlg_item.control123 {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    color: #b45309 !important;
+    margin-top: 4px !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+.lampada-btn {
+    width: 100% !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    background: #fef3c7 !important;
+    color: #92400e !important;
+    border: 1px solid #fde68a !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 /* Generic Sub-Dialog Styling (scooter shops, job quizzes, events, etc.) */
@@ -1247,14 +1541,39 @@ button:active, input[type="button"]:active {
     background: #f8fafc;
 }
 
-.picche-hero-card img {
-    max-height: 140px !important;
-    object-fit: contain !important;
+.picche-header-badge {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.picche-hero-card {
+    width: 100%;
+    max-width: 220px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+    border: 2px solid #fca5a5;
     padding: 10px;
 }
 
+.picche-hero-card img {
+    max-height: 150px !important;
+    object-fit: contain !important;
+}
+
 .cerca-tipa-stats-card,
-.picche-desc-card,
 .due-donne-desc-card {
     background: #ffffff;
     border-radius: 12px;
@@ -1263,6 +1582,44 @@ button:active, input[type="button"]:active {
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.picche-desc-card {
+    width: 100%;
+    background: #fff5f5;
+    border-radius: 12px;
+    padding: 16px;
+    border-left: 5px solid #ef4444;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+}
+
+.picche-quote-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: #991b1b;
+}
+
+.picche-quote-text {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #1f2937 !important;
+    line-height: 1.5 !important;
+    font-style: italic !important;
+}
+
+.picche-action-btn {
+    width: 100% !important;
+    height: 52px !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    background: #dc2626 !important;
+    color: #ffffff !important;
+    border-radius: 12px !important;
 }
 
 .tipa-stat-row {

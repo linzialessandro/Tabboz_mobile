@@ -1344,40 +1344,221 @@
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
+        const imgHero = body.querySelector('img.control240') || body.querySelector('img');
         const soldiEl = body.querySelector('.control104');
-        const btnOk = body.querySelector('.control1');
-        const btnCancel = body.querySelector('.control2');
+        const figositaEl = body.querySelector('.control105');
+        const abbonamentoEl = body.querySelector('.control106');
+        const abbronzaturaEl = body.querySelector('.control107');
+
+        const btnWorkout = body.querySelector('button.control110');
+        const btnMese = body.querySelector('button.control115');
+        const btnSeiMesi = body.querySelector('button.control116');
+        const btnAnno = body.querySelector('button.control117');
+        const btnLampada = body.querySelector('button.control111');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1') || body.querySelector('button');
+
+        const priceMese = body.querySelector('.control120');
+        const priceSeiMesi = body.querySelector('.control121');
+        const priceAnno = body.querySelector('.control122');
+        const priceLampada = body.querySelector('.control123');
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-palestra-view';
 
+        // 1. Live Stats Grid (Soldi, Figosità, Abbonamento, Abbronzatura)
+        const statsBar = document.createElement('div');
+        statsBar.className = 'palestra-stats-grid';
+
         if (soldiEl) {
             resetElement(soldiEl);
-            const bar = document.createElement('div'); bar.className = 'mobile-stats-bar';
-            const c = document.createElement('div'); c.className = 'mini-stat stat-soldi';
-            c.innerHTML = '<small>💰 Soldi</small>';
-            c.appendChild(soldiEl);
-            bar.appendChild(c);
-            container.appendChild(bar);
+            const c = document.createElement('div'); c.className = 'palestra-stat-card stat-soldi';
+            c.innerHTML = '<span class="stat-icon">💰</span><div><small>Soldi</small></div>';
+            c.querySelector('div').appendChild(soldiEl);
+            statsBar.appendChild(c);
+        }
+        if (figositaEl) {
+            resetElement(figositaEl);
+            const c = document.createElement('div'); c.className = 'palestra-stat-card stat-figosita';
+            c.innerHTML = '<span class="stat-icon">⭐</span><div><small>Figosità</small></div>';
+            c.querySelector('div').appendChild(figositaEl);
+            statsBar.appendChild(c);
+        }
+        if (abbonamentoEl) {
+            resetElement(abbonamentoEl);
+            const c = document.createElement('div'); c.className = 'palestra-stat-card stat-abbonamento';
+            c.innerHTML = '<span class="stat-icon">🎫</span><div><small>Abbonamento</small></div>';
+            c.querySelector('div').appendChild(abbonamentoEl);
+            statsBar.appendChild(c);
+        }
+        if (abbronzaturaEl) {
+            resetElement(abbronzaturaEl);
+            const c = document.createElement('div'); c.className = 'palestra-stat-card stat-abbronzatura';
+            c.innerHTML = '<span class="stat-icon">☀️</span><div><small>Abbronzatura</small></div>';
+            c.querySelector('div').appendChild(abbronzaturaEl);
+            statsBar.appendChild(c);
+        }
+        container.appendChild(statsBar);
+
+        // 2. Gym Hero Graphic
+        if (imgHero) {
+            resetElement(imgHero);
+            const heroCard = document.createElement('div');
+            heroCard.className = 'palestra-hero-card';
+            heroCard.appendChild(imgHero);
+            container.appendChild(heroCard);
         }
 
-        // Get all action buttons except OK/Cancel
-        const buttons = Array.from(body.querySelectorAll('button.dlg_item')).filter(b =>
-            !b.classList.contains('control1') && !b.classList.contains('control2'));
+        // 3. Primary Workout Action Card (Vai in Palestra)
+        if (btnWorkout) {
+            resetElement(btnWorkout);
+            const workoutSection = document.createElement('div');
+            workoutSection.className = 'palestra-section';
 
-        const actionsList = document.createElement('div');
-        actionsList.className = 'palestra-actions-list';
-        buttons.forEach(btn => {
-            resetElement(btn);
-            actionsList.appendChild(btn);
-        });
-        container.appendChild(actionsList);
+            const workoutCard = document.createElement('div');
+            workoutCard.className = 'palestra-workout-card';
 
-        const actionsBar = document.createElement('div');
-        actionsBar.className = 'mobile-bottom-bar';
-        if (btnCancel) { resetElement(btnCancel); btnCancel.innerHTML = '✕ Esci'; actionsBar.appendChild(btnCancel); }
-        if (btnOk) { resetElement(btnOk); btnOk.innerHTML = '✓ Fatto'; actionsBar.appendChild(btnOk); }
-        container.appendChild(actionsBar);
+            btnWorkout.className = 'dlg_item control110 mobile-btn primary palestra-workout-btn';
+            btnWorkout.innerHTML = '🏋️‍♂️ VAI IN PALESTRA (Allenati)';
+
+            workoutCard.appendChild(btnWorkout);
+            const subtitle = document.createElement('div');
+            subtitle.className = 'palestra-card-hint';
+            subtitle.innerText = 'Richiede un abbonamento attivo. Aumenta la tua Figosità!';
+            workoutCard.appendChild(subtitle);
+
+            workoutSection.appendChild(workoutCard);
+            container.appendChild(workoutSection);
+        }
+
+        // 4. Abbonamenti Subscriptions Section
+        const abbSection = document.createElement('div');
+        abbSection.className = 'palestra-section';
+        const abbTitle = document.createElement('div');
+        abbTitle.className = 'palestra-section-title';
+        abbTitle.innerHTML = '📋 Scegli Abbonamento Palestra';
+        abbSection.appendChild(abbTitle);
+
+        const abbGrid = document.createElement('div');
+        abbGrid.className = 'palestra-sub-grid';
+
+        // 1 Mese
+        if (btnMese) {
+            resetElement(btnMese);
+            const card = document.createElement('div');
+            card.className = 'palestra-sub-card';
+            card.innerHTML = `
+                <div class="sub-duration">1 Mese</div>
+                <div class="sub-icon">🥉</div>
+            `;
+            if (priceMese) {
+                resetElement(priceMese);
+                priceMese.className = 'dlg_item control120 sub-price';
+                card.appendChild(priceMese);
+            } else {
+                const p = document.createElement('div'); p.className = 'sub-price'; p.innerText = '50.000 L.'; card.appendChild(p);
+            }
+            btnMese.className = 'dlg_item control115 mobile-btn secondary sub-btn';
+            btnMese.innerHTML = 'Abbonati';
+            card.appendChild(btnMese);
+            abbGrid.appendChild(card);
+        }
+
+        // 6 Mesi
+        if (btnSeiMesi) {
+            resetElement(btnSeiMesi);
+            const card = document.createElement('div');
+            card.className = 'palestra-sub-card featured';
+            card.innerHTML = `
+                <div class="sub-badge">CONSIGLIATO</div>
+                <div class="sub-duration">6 Mesi</div>
+                <div class="sub-icon">🥈</div>
+            `;
+            if (priceSeiMesi) {
+                resetElement(priceSeiMesi);
+                priceSeiMesi.className = 'dlg_item control121 sub-price';
+                card.appendChild(priceSeiMesi);
+            } else {
+                const p = document.createElement('div'); p.className = 'sub-price'; p.innerText = '270.000 L.'; card.appendChild(p);
+            }
+            btnSeiMesi.className = 'dlg_item control116 mobile-btn primary sub-btn';
+            btnSeiMesi.innerHTML = 'Abbonati';
+            card.appendChild(btnSeiMesi);
+            abbGrid.appendChild(card);
+        }
+
+        // 1 Anno
+        if (btnAnno) {
+            resetElement(btnAnno);
+            const card = document.createElement('div');
+            card.className = 'palestra-sub-card';
+            card.innerHTML = `
+                <div class="sub-duration">1 Anno</div>
+                <div class="sub-icon">🥇</div>
+            `;
+            if (priceAnno) {
+                resetElement(priceAnno);
+                priceAnno.className = 'dlg_item control122 sub-price';
+                card.appendChild(priceAnno);
+            } else {
+                const p = document.createElement('div'); p.className = 'sub-price'; p.innerText = '500.000 L.'; card.appendChild(p);
+            }
+            btnAnno.className = 'dlg_item control117 mobile-btn secondary sub-btn';
+            btnAnno.innerHTML = 'Abbonati';
+            card.appendChild(btnAnno);
+            abbGrid.appendChild(card);
+        }
+
+        abbSection.appendChild(abbGrid);
+        container.appendChild(abbSection);
+
+        // 5. Lampada UVA Section
+        if (btnLampada) {
+            resetElement(btnLampada);
+            const lampSection = document.createElement('div');
+            lampSection.className = 'palestra-section';
+
+            const lampTitle = document.createElement('div');
+            lampTitle.className = 'palestra-section-title';
+            lampTitle.innerHTML = '☀️ Solarium & Lampade UVA';
+            lampSection.appendChild(lampTitle);
+
+            const lampCard = document.createElement('div');
+            lampCard.className = 'palestra-lampada-card';
+
+            const lampInfo = document.createElement('div');
+            lampInfo.className = 'lampada-info';
+            lampInfo.innerHTML = `
+                <div class="lampada-title">🛋️ Seduta Lampada Solare</div>
+                <div class="lampada-desc">Aumenta l'abbronzatura e il livello di Figosità immediato.</div>
+            `;
+
+            if (priceLampada) {
+                resetElement(priceLampada);
+                priceLampada.className = 'dlg_item control123 lampada-price';
+                lampInfo.appendChild(priceLampada);
+            } else {
+                const p = document.createElement('div'); p.className = 'lampada-price'; p.innerText = '14.000 L.'; lampInfo.appendChild(p);
+            }
+            lampCard.appendChild(lampInfo);
+
+            btnLampada.className = 'dlg_item control111 mobile-btn secondary lampada-btn';
+            btnLampada.innerHTML = '☀️ Fai una Lampada';
+            lampCard.appendChild(btnLampada);
+
+            lampSection.appendChild(lampCard);
+            container.appendChild(lampSection);
+        }
+
+        // 6. Bottom Navigation Bar
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
+            btnOk.innerHTML = '✓ Torna ai Negozi';
+            const bar = document.createElement('div');
+            bar.className = 'mobile-bottom-bar';
+            bar.appendChild(btnOk);
+            container.appendChild(bar);
+        }
 
         body.innerHTML = '';
         body.appendChild(container);
@@ -1767,11 +1948,18 @@
 
         const img = body.querySelector('img.dlg_item') || body.querySelector('img');
         const descEl = body.querySelector('.control105') || body.querySelector('.control[data-class="STATIC"]');
-        const btnOk = getButtonOk(body) || body.querySelector('button');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1') || body.querySelector('button');
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-picche-view';
 
+        // Rejection Badge Header
+        const badgeHeader = document.createElement('div');
+        badgeHeader.className = 'picche-header-badge';
+        badgeHeader.innerHTML = '<span>💔</span> <span>DUE DI PICCHE !</span>';
+        container.appendChild(badgeHeader);
+
+        // 2 of Spades Hero Card
         if (img) {
             resetElement(img);
             const card = document.createElement('div');
@@ -1780,17 +1968,25 @@
             container.appendChild(card);
         }
 
+        // Girl rejection dialogue quote card
+        const quoteCard = document.createElement('div');
+        quoteCard.className = 'picche-desc-card';
+        const quoteLabel = document.createElement('div');
+        quoteLabel.className = 'picche-quote-label';
+        quoteLabel.innerHTML = '💬 La ragazza ti dice:';
+        quoteCard.appendChild(quoteLabel);
+
         if (descEl) {
             resetElement(descEl);
-            const card = document.createElement('div');
-            card.className = 'picche-desc-card';
-            card.appendChild(descEl);
-            container.appendChild(card);
+            descEl.className = 'dlg_item control105 picche-quote-text';
+            quoteCard.appendChild(descEl);
         }
+        container.appendChild(quoteCard);
 
+        // Bottom Action Button
         if (btnOk) {
             resetElement(btnOk);
-            btnOk.className += ' button_ok';
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn danger picche-action-btn';
             btnOk.innerHTML = '💔 Ci rinuncio...';
             const bar = document.createElement('div');
             bar.className = 'mobile-bottom-bar';
