@@ -376,14 +376,32 @@
         }
     }
 
-    function centerDialog(element) {
-        const screen = document.getElementById('screen');
-        if (!screen || !element) return;
-        const sw = window.innerWidth;
-        const ew = parseInt(element.style.width) || element.offsetWidth || 360;
-        const x = Math.max(4, (sw - ew) / 2);
-        element.style.left = x + 'px';
-        element.style.top = '12px';
+    function centerWindow(win) {
+        if (!win) return;
+        const screenW = window.innerWidth;
+        const screenH = window.innerHeight;
+
+        // Determine true unscaled design dimensions
+        let winW = parseInt(win.style.width) || win.offsetWidth || 360;
+        let winH = parseInt(win.style.height) || win.offsetHeight || 360;
+        if (win.scrollWidth > winW) winW = win.scrollWidth;
+        if (win.scrollHeight > winH) winH = win.scrollHeight;
+
+        // Calculate available viewport size (leaving small safe margins)
+        const availW = Math.max(280, screenW - 12);
+        const availH = Math.max(320, screenH - 24);
+
+        const scaleX = availW / winW;
+        const scaleY = availH / winH;
+
+        // Scale to maximize screen usage without cutting off any edge
+        let scale = Math.min(scaleX, scaleY);
+        scale = Math.min(1.6, Math.max(0.6, scale));
+
+        win.style.transform = `translate(-50%, -50%) scale(${scale.toFixed(3)})`;
+        win.style.transformOrigin = 'center center';
+        win.style.left = '50%';
+        win.style.top = '50%';
     }
 
     function setWindowInitialPosition(win, x, y, width, height, parentWindowId) {
@@ -393,7 +411,7 @@
         if (height !== CW_SKIPRESIZE && height !== CW_USEDEFAULT) {
             win.style.height = height + 'px';
         }
-        centerDialog(win);
+        centerWindow(win);
     }
 
     function createWindow(html, hWnd, x, y, width, height, lpCaption, dwStyle, dwExStyle, parentWindowId) {
@@ -416,35 +434,49 @@
         return win;
     }
 
-    async function messageBox(hWnd, lpText, lpCaption, uType, parentWindowId) {
-        const c = createWindow(MESSAGE_BOX_TMPL, hWnd, 0, 0, CW_SKIPRESIZE, CW_SKIPRESIZE, lpCaption, 0, 0, parentWindowId);
+    function messageBox(hWnd, lpText, lpCaption, uType, parentWindowId) {
+        return new Promise((resolve) => {
+            const c = createWindow(MESSAGE_BOX_TMPL, hWnd, 0, 0, CW_SKIPRESIZE, CW_SKIPRESIZE, lpCaption, 0, 0, parentWindowId);
 
-        if (uType & 0x00000020) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/102.png`;
-        else if (uType & 0x00000010) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/103.png`;
-        else if (uType & 0x00000030) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/101.png`;
-        else if (uType & 0x00000040) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/104.png`;
+            if (uType & 0x00000020) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/102.png`;
+            else if (uType & 0x00000010) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/103.png`;
+            else if (uType & 0x00000030) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/101.png`;
+            else if (uType & 0x00000040) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/104.png`;
 
-        if (uType & 0x00000001) { // MB_OKCANCEL
-            c.querySelector('.control1').style.display = 'inline-block';
-            c.querySelector('.control2').style.display = 'inline-block';
-            c.querySelector('.control6').style.display = 'none';
-            c.querySelector('.control7').style.display = 'none';
-        } else if (uType & 0x00000004) { // MB_YESNO
-            c.querySelector('.control1').style.display = 'none';
-            c.querySelector('.control2').style.display = 'none';
-            c.querySelector('.control6').style.display = 'inline-block';
-            c.querySelector('.control7').style.display = 'inline-block';
-        } else { // MB_OK
-            c.querySelector('.control1').style.display = 'inline-block';
-            c.querySelector('.control2').style.display = 'none';
-            c.querySelector('.control6').style.display = 'none';
-            c.querySelector('.control7').style.display = 'none';
-        }
+            if (uType & 0x00000001) { // MB_OKCANCEL
+                c.querySelector('.control1').style.display = 'inline-block';
+                c.querySelector('.control2').style.display = 'inline-block';
+                c.querySelector('.control6').style.display = 'none';
+                c.querySelector('.control7').style.display = 'none';
+            } else if (uType & 0x00000004) { // MB_YESNO
+                c.querySelector('.control1').style.display = 'none';
+                c.querySelector('.control2').style.display = 'none';
+                c.querySelector('.control6').style.display = 'inline-block';
+                c.querySelector('.control7').style.display = 'inline-block';
+            } else { // MB_OK
+                c.querySelector('.control1').style.display = 'inline-block';
+                c.querySelector('.control2').style.display = 'none';
+                c.querySelector('.control6').style.display = 'none';
+                c.querySelector('.control7').style.display = 'none';
+            }
 
-        c.querySelector('.content').innerText = UTF8ToString(lpText);
-        setActiveWindow(hWnd);
-        showWindow(hWnd, 1);
-        centerDialog(c);
+            c.querySelector('.content').innerText = UTF8ToString(lpText);
+            setActiveWindow(hWnd);
+            showWindow(hWnd, 1);
+            centerWindow(c);
+
+            function handleChoice(resVal) {
+                destroyWindow(hWnd);
+                resolve(resVal);
+            }
+
+            c.querySelector('.control1').onclick = (e) => { e.stopPropagation(); handleChoice(1); };
+            c.querySelector('.control2').onclick = (e) => { e.stopPropagation(); handleChoice(2); };
+            c.querySelector('.control6').onclick = (e) => { e.stopPropagation(); handleChoice(6); };
+            c.querySelector('.control7').onclick = (e) => { e.stopPropagation(); handleChoice(7); };
+            const closeBtn = c.querySelector('.title-bar-controls button');
+            if (closeBtn) closeBtn.onclick = (e) => { e.stopPropagation(); handleChoice(uType & 0x00000004 ? 7 : (uType & 0x00000001 ? 2 : 1)); };
+        });
     }
 
     async function dialogBox(hWnd, dialog, parentWindowId, hInstance) {
@@ -455,6 +487,7 @@
         html = html.replace(/src="resources\//g, 'src="../resources/');
 
         const win = createWindow(html, hWnd, CW_USEDEFAULT, CW_USEDEFAULT, CW_SKIPRESIZE, CW_SKIPRESIZE, null, 0, 0, parentWindowId);
+        win.classList.add('dlg-' + dialog);
         setActiveWindow(hWnd);
         addMainMenu(win);
 
@@ -470,7 +503,7 @@
         });
 
         showWindow(hWnd, 1);
-        centerDialog(win);
+        centerWindow(win);
     }
 
     function destroyWindow(hWnd) {

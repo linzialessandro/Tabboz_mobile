@@ -40,19 +40,18 @@ html, body {
     display: none;
 }
 
-/* Window Dialog Mobile Centering & Touch Optimization */
+/* Window Dialog Mobile Centering & Scaling */
 .window {
     position: absolute !important;
     left: 50% !important;
     top: 50% !important;
-    transform: translate(-50%, -50%) !important;
+    transform: translate(-50%, -50%);
     margin: 0 !important;
     z-index: 20;
-    box-shadow: 0 10px 36px rgba(0, 0, 0, 0.65);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.75);
     touch-action: manipulation;
-    max-width: calc(100vw - 12px);
-    max-height: calc(100dvh - 16px);
-    box-sizing: border-box;
+    box-sizing: content-box;
+    flex-shrink: 0;
 }
 
 /* Active window sits in front of the modal wall */
