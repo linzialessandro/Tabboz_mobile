@@ -1,21 +1,24 @@
 <div align="center">
-  <a href="https://andreax79.github.io/tabboz/" target="_blank"><img alt="Tabboz Simulator" src="https://github.com/andreax79/tabboz/assets/1288154/64269165-8958-4f3a-945a-82c3ffffd4de"/></a>
+  <a href="https://linzialessandro.github.io/Tabboz_mobile/" target="_blank"><img alt="Tabboz Simulator Mobile" src="mobile/icons/banner.png" width="400"/></a>
+  <h1>Tabboz Simulator — Mobile Edition</h1>
+  <p><em>Porting mobile-first del celebre simulatore di vita del tabbozzo milanese degli anni '90 / 2000</em></p>
 </div>
 <br/>
 
-Simply tap the icon to launch the Tabboz Simulator directly in your browser.
+> [!NOTE]
+> **Repository Sandbox**: Questo repository è un fork / sandbox di sviluppo per testare l'esperienza WebApp Mobile (PWA) prima di una futura Pull Request al [repository ufficiale upstream](https://github.com/andreax79/tabboz).
+> L'emulatore desktop originale è creato e mantenuto da **Andrea Bonomi** ed **Emanuele Caccialanza** ed è giocabile all'indirizzo [andreax79.github.io/tabboz](https://andreax79.github.io/tabboz/).
 
-## 📱 Mobile PWA
+## 📱 Mobile PWA (Gioca Online)
 
-The mobile-first web app is available at [`/mobile/`](mobile/). It keeps the
-original C/WebAssembly game engine and its Win32 control IDs intact; only the
-browser bridge turns the original dialogs into touch-friendly screens. This
-means game rules, events, choices, persistence and progression remain those of
-the original game.
+La versione Mobile è accessibile direttamente su:
+👉 **[https://linzialessandro.github.io/Tabboz_mobile/](https://linzialessandro.github.io/Tabboz_mobile/)**
 
-For GitHub Pages, enable **GitHub Actions** as the Pages source. The included
-workflow publishes the repository on every push to `main`; the mobile entry
-point is `https://linzialessandro.github.io/Tabboz_mobile/mobile/`.
+Mantiene intatto al 100% l'engine di gioco originale C/WebAssembly e la sua logica Win32, trasformando l'interfaccia in un'esperienza touch-friendly, fluida e installabile come Progressive Web App (PWA) con:
+- Interfaccia ottimizzata per schermi verticali / smartphone
+- Gestione salvataggi multi-slot su LocalStorage con export/import file `.tabboz`
+- Supporto offline completo via Service Worker
+- Piena fedeltà a tutte le feature del gioco originale (Scuola, Negozi, Bar Tabacchi, Scooter, Tuning, Disco, Tipa, Famiglia, Compagnia)
 
 ## 🖥️ Web development
 

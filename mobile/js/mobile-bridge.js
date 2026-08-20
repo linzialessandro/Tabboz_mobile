@@ -1,7 +1,15 @@
 /**
  * Tabboz Simulator Mobile - Mobile Bridge
- * Faithful Win32 Emulation Bridge for Emscripten / WebAssembly
- * Based directly on novantotto.js with mobile touch ergonomics.
+ *
+ * Based on Novantotto:
+ * Copyright (c) 2024 Andrea Bonomi
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * Tabboz Simulator:
+ * Copyright (c) 1997-2001 Andrea Bonomi, Emanuele Caccialanza
+ * Distributed under the terms of the GNU General Public License v3.0.
  */
 
 ((exports) => {
@@ -205,17 +213,25 @@
     // Window Management
     // =========================================================================
 
+    let _highestZIndex = 50;
+
     function setActiveWindow(hWnd) {
         console.log('[setActiveWindow] setting active window:', hWnd);
         _activeWindowHwnd = hWnd;
+        _highestZIndex += 10;
         document.querySelectorAll(".window").forEach(w => {
-            w.style.zIndex = '20';
+            if (!w.classList.contains("messagebox")) {
+                w.classList.remove("active-window");
+                w.style.display = 'none';
+            }
             const tb = w.querySelector(".title-bar");
             if (tb) tb.classList.add("inactive");
         });
         const activeWin = document.querySelector(`#win${hWnd}`);
         if (activeWin) {
-            activeWin.style.zIndex = '50';
+            activeWin.classList.add("active-window");
+            activeWin.style.zIndex = _highestZIndex;
+            activeWin.style.display = activeWin.classList.contains("messagebox") ? 'block' : 'flex';
             const tb = activeWin.querySelector(".title-bar");
             if (tb) tb.classList.remove("inactive");
             try {
@@ -378,30 +394,18 @@
 
     function centerWindow(win) {
         if (!win) return;
-        const screenW = window.innerWidth;
-        const screenH = window.innerHeight;
-
-        // Determine true unscaled design dimensions
-        let winW = parseInt(win.style.width) || win.offsetWidth || 360;
-        let winH = parseInt(win.style.height) || win.offsetHeight || 360;
-        if (win.scrollWidth > winW) winW = win.scrollWidth;
-        if (win.scrollHeight > winH) winH = win.scrollHeight;
-
-        // Calculate available viewport size (leaving small safe margins)
-        const availW = Math.max(280, screenW - 12);
-        const availH = Math.max(320, screenH - 24);
-
-        const scaleX = availW / winW;
-        const scaleY = availH / winH;
-
-        // Scale to maximize screen usage without cutting off any edge
-        let scale = Math.min(scaleX, scaleY);
-        scale = Math.min(1.6, Math.max(0.6, scale));
-
-        win.style.transform = `translate(-50%, -50%) scale(${scale.toFixed(3)})`;
-        win.style.transformOrigin = 'center center';
-        win.style.left = '50%';
-        win.style.top = '50%';
+        if (win.classList.contains('messagebox')) {
+            win.style.position = 'fixed';
+            win.style.left = '50%';
+            win.style.top = '50%';
+            win.style.transform = 'translate(-50%, -50%)';
+            return;
+        }
+        win.style.left = '0px';
+        win.style.top = '0px';
+        win.style.width = '100%';
+        win.style.height = '100%';
+        win.style.transform = 'none';
     }
 
     function setWindowInitialPosition(win, x, y, width, height, parentWindowId) {
@@ -434,48 +438,1678 @@
         return win;
     }
 
-    function messageBox(hWnd, lpText, lpCaption, uType, parentWindowId) {
-        return new Promise((resolve) => {
-            const c = createWindow(MESSAGE_BOX_TMPL, hWnd, 0, 0, CW_SKIPRESIZE, CW_SKIPRESIZE, lpCaption, 0, 0, parentWindowId);
+    async function messageBox(hWnd, lpText, lpCaption, uType, parentWindowId) {
+        console.log('[messageBox] opening messageBox hWnd:', hWnd, 'caption:', lpCaption);
+        const c = createWindow(MESSAGE_BOX_TMPL, hWnd, 0, 0, CW_SKIPRESIZE, CW_SKIPRESIZE, lpCaption, 0, 0, parentWindowId);
+        c.classList.add('messagebox');
 
-            if (uType & 0x00000020) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/102.png`;
-            else if (uType & 0x00000010) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/103.png`;
-            else if (uType & 0x00000030) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/101.png`;
-            else if (uType & 0x00000040) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/104.png`;
+        if (uType & 0x00000020) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/102.png`;
+        else if (uType & 0x00000010) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/103.png`;
+        else if (uType & 0x00000030) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/101.png`;
+        else if (uType & 0x00000040) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/104.png`;
 
-            if (uType & 0x00000001) { // MB_OKCANCEL
-                c.querySelector('.control1').style.display = 'inline-block';
-                c.querySelector('.control2').style.display = 'inline-block';
-                c.querySelector('.control6').style.display = 'none';
-                c.querySelector('.control7').style.display = 'none';
-            } else if (uType & 0x00000004) { // MB_YESNO
-                c.querySelector('.control1').style.display = 'none';
-                c.querySelector('.control2').style.display = 'none';
-                c.querySelector('.control6').style.display = 'inline-block';
-                c.querySelector('.control7').style.display = 'inline-block';
-            } else { // MB_OK
-                c.querySelector('.control1').style.display = 'inline-block';
-                c.querySelector('.control2').style.display = 'none';
-                c.querySelector('.control6').style.display = 'none';
-                c.querySelector('.control7').style.display = 'none';
+        if (uType & 0x00000001) { // MB_OKCANCEL
+            c.querySelector('.control1').style.display = 'inline-block';
+            c.querySelector('.control2').style.display = 'inline-block';
+            c.querySelector('.control6').style.display = 'none';
+            c.querySelector('.control7').style.display = 'none';
+        } else if (uType & 0x00000004) { // MB_YESNO
+            c.querySelector('.control1').style.display = 'none';
+            c.querySelector('.control2').style.display = 'none';
+            c.querySelector('.control6').style.display = 'inline-block';
+            c.querySelector('.control7').style.display = 'inline-block';
+        } else { // MB_OK
+            c.querySelector('.control1').innerText = 'OK';
+            c.querySelector('.control1').style.display = 'inline-block';
+            c.querySelector('.control2').style.display = 'none';
+            c.querySelector('.control6').style.display = 'none';
+            c.querySelector('.control7').style.display = 'none';
+        }
+
+        c.querySelector('.content').innerText = typeof lpText === 'number' ? UTF8ToString(lpText) : lpText;
+        setActiveWindow(hWnd);
+        showWindow(hWnd, 1);
+        centerWindow(c);
+    }
+
+    function resetElement(el) {
+        if (!el) return;
+        el.style.position = 'static';
+        el.style.left = 'auto';
+        el.style.top = 'auto';
+        el.style.width = 'auto';
+        el.style.height = 'auto';
+        el.style.margin = '0';
+    }
+
+    function getButtonOk(body) {
+        if (!body) return null;
+        return body.querySelector('button.control1') || body.querySelector('button.button_ok') || body.querySelector('button[class*="control1"]') || body.querySelector('.button_ok') || body.querySelector('.control1');
+    }
+
+    function getButtonCancel(body) {
+        if (!body) return null;
+        return body.querySelector('button.control2') || body.querySelector('button.button_cancel') || body.querySelector('button[class*="control2"]') || body.querySelector('.button_cancel') || body.querySelector('.control2');
+    }
+
+    function transformDashboard(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const nameEl = body.querySelector('.control102');
+        const dateEl = body.querySelector('.control157');
+        const canvas = body.querySelector('canvas') || body.querySelector('.bmpview') || body.querySelector('.BMPView');
+        const soldiEl = body.querySelector('.control105') || body.querySelector('.control150');
+        const figositaEl = body.querySelector('.control151');
+        const reputazioneEl = body.querySelector('.control152');
+        const studioEl = body.querySelector('.control153');
+        const tipaRapportoEl = body.querySelector('.control154');
+        const tipaNomeEl = body.querySelector('.control155');
+        const scooterEl = body.querySelector('.control156');
+
+        const btnScooter = body.querySelector('.control130');
+        const btnNegozi = body.querySelector('.control131');
+        const btnDisco = body.querySelector('.control132');
+        const btnScuola = body.querySelector('.control136');
+        const btnLavoro = body.querySelector('.control137');
+        const btnTipa = body.querySelector('.control133');
+        const btnCompagnia = body.querySelector('.control134');
+        const btnFamiglia = body.querySelector('.control135');
+        const btnAbout = body.querySelector('.control120');
+
+        const container = document.createElement('div');
+        container.className = 'mobile-dashboard-container';
+
+        const headerCard = document.createElement('div');
+        headerCard.className = 'dashboard-header-card';
+        if (nameEl) { resetElement(nameEl); headerCard.appendChild(nameEl); }
+        if (dateEl) { resetElement(dateEl); headerCard.appendChild(dateEl); }
+        container.appendChild(headerCard);
+
+        const heroRow = document.createElement('div');
+        heroRow.className = 'dashboard-hero-row';
+        if (canvas) { resetElement(canvas); heroRow.appendChild(canvas); }
+
+        const statsCol = document.createElement('div');
+        statsCol.className = 'dashboard-stats-col';
+        if (soldiEl) {
+            resetElement(soldiEl);
+            const row = document.createElement('div'); row.className = 'stat-card stat-soldi';
+            row.innerHTML = '<span class="stat-label">💰 Soldi:</span>';
+            row.appendChild(soldiEl);
+            statsCol.appendChild(row);
+        }
+        if (figositaEl) {
+            resetElement(figositaEl);
+            const row = document.createElement('div'); row.className = 'stat-card';
+            row.innerHTML = '<span class="stat-label">⭐ Figosità:</span>';
+            row.appendChild(figositaEl);
+            statsCol.appendChild(row);
+        }
+        if (reputazioneEl) {
+            resetElement(reputazioneEl);
+            const row = document.createElement('div'); row.className = 'stat-card';
+            row.innerHTML = '<span class="stat-label">👑 Reputazione:</span>';
+            row.appendChild(reputazioneEl);
+            statsCol.appendChild(row);
+        }
+        if (studioEl) {
+            resetElement(studioEl);
+            const row = document.createElement('div'); row.className = 'stat-card';
+            row.innerHTML = '<span class="stat-label">🎓 Studio:</span>';
+            row.appendChild(studioEl);
+            statsCol.appendChild(row);
+        }
+        if (scooterEl) {
+            resetElement(scooterEl);
+            const row = document.createElement('div'); row.className = 'stat-card';
+            row.innerHTML = '<span class="stat-label">🛵 Scooter:</span>';
+            row.appendChild(scooterEl);
+            statsCol.appendChild(row);
+        }
+        if (tipaRapportoEl) {
+            resetElement(tipaRapportoEl);
+            const row = document.createElement('div'); row.className = 'stat-card';
+            row.innerHTML = '<span class="stat-label">💋 Tipa:</span>';
+            row.appendChild(tipaRapportoEl);
+            statsCol.appendChild(row);
+        }
+        heroRow.appendChild(statsCol);
+        container.appendChild(heroRow);
+
+        const navGrid = document.createElement('div');
+        navGrid.className = 'dashboard-nav-grid';
+        if (btnScooter) { resetElement(btnScooter); btnScooter.innerHTML = '<span>🛵</span> <span>Scooter</span>'; navGrid.appendChild(btnScooter); }
+        if (btnNegozi) { resetElement(btnNegozi); btnNegozi.innerHTML = '<span>🏬</span> <span>Negozi</span>'; navGrid.appendChild(btnNegozi); }
+        if (btnDisco) { resetElement(btnDisco); btnDisco.innerHTML = '<span>🪩</span> <span>Disco</span>'; navGrid.appendChild(btnDisco); }
+        if (btnScuola) { resetElement(btnScuola); btnScuola.innerHTML = '<span>🎓</span> <span>Scuola</span>'; navGrid.appendChild(btnScuola); }
+        if (btnLavoro) { resetElement(btnLavoro); btnLavoro.innerHTML = '<span>💼</span> <span>Lavoro</span>'; navGrid.appendChild(btnLavoro); }
+        if (btnTipa) { resetElement(btnTipa); btnTipa.innerHTML = '<span>💋</span> <span>Tipa</span>'; navGrid.appendChild(btnTipa); }
+        if (btnCompagnia) { resetElement(btnCompagnia); btnCompagnia.innerHTML = '<span>👥</span> <span>Compagnia</span>'; navGrid.appendChild(btnCompagnia); }
+        if (btnFamiglia) { resetElement(btnFamiglia); btnFamiglia.innerHTML = '<span>🏠</span> <span>Famiglia</span>'; navGrid.appendChild(btnFamiglia); }
+        container.appendChild(navGrid);
+
+        if (btnAbout) {
+            resetElement(btnAbout);
+            btnAbout.innerHTML = 'ℹ️ Info su Tabboz Simulator';
+            container.appendChild(btnAbout);
+        }
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformAbout(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const banner = body.querySelector('img.control257') || body.querySelector('img');
+        const btnNorme = body.querySelector('.control113');
+        const btnOk = getButtonOk(body) || body.querySelector('button');
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-about-view';
+
+        if (banner) {
+            resetElement(banner);
+            const card = document.createElement('div');
+            card.className = 'about-hero-card';
+            card.appendChild(banner);
+            container.appendChild(card);
+        }
+
+        const infoCard = document.createElement('div');
+        infoCard.className = 'about-info-card';
+        infoCard.innerHTML = `
+            <div class="about-title">Tabboz Simulator Mobile</div>
+            <div class="about-version">Versione 0.92q (PWA Modern Edition)</div>
+            <div class="about-section">
+                <div class="about-heading">Created by:</div>
+                <div class="about-text">Andrea Bonomi & Emanuele Caccialanza</div>
+            </div>
+            <div class="about-section">
+                <div class="about-heading">Beta testers:</div>
+                <div class="about-text">Daniele Gazzarri, Dino Lucci, Giulio Lucci</div>
+            </div>
+            <div class="about-warning">
+                ⚠️ Questo programma contiene un linguaggio talvolta offensivo; ogni riferimento a persone e cose è puramente casuale.
+            </div>
+        `;
+        container.appendChild(infoCard);
+
+        if (btnNorme) {
+            resetElement(btnNorme);
+            btnNorme.className = 'mobile-btn secondary';
+            btnNorme.innerHTML = '📜 Norme di utilizzo';
+            container.appendChild(btnNorme);
+        }
+
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.className += ' button_ok';
+            btnOk.innerHTML = '✓ Chiudi';
+            const bar = document.createElement('div');
+            bar.className = 'mobile-bottom-bar';
+            bar.appendChild(btnOk);
+            container.appendChild(bar);
+        }
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformScuola(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const canvas = body.querySelector('canvas') || body.querySelector('.bmpview') || body.querySelector('.BMPView') || body.querySelector('img.control249');
+        const soldiEl = body.querySelector('.control104');
+        const reputazioneEl = body.querySelector('.control105');
+        const studioEl = body.querySelector('.control106');
+
+        const btnStudia = body.querySelector('.control103');
+        const btnMinaccia = body.querySelector('.control102');
+        const btnCorrompi = body.querySelector('.control101');
+        const btnOk = body.querySelector('.control1');
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-scuola-view';
+
+        // Top School Image & Stats Banner
+        if (canvas) {
+            resetElement(canvas);
+            const imgCard = document.createElement('div');
+            imgCard.className = 'scuola-hero-card';
+            imgCard.appendChild(canvas);
+            container.appendChild(imgCard);
+        }
+
+        const statsBar = document.createElement('div');
+        statsBar.className = 'mobile-stats-bar';
+        if (soldiEl) { resetElement(soldiEl); const c = document.createElement('div'); c.className = 'mini-stat stat-soldi'; c.innerHTML = '<small>💰 Soldi</small>'; c.appendChild(soldiEl); statsBar.appendChild(c); }
+        if (reputazioneEl) { resetElement(reputazioneEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.innerHTML = '<small>👑 Reputazione</small>'; c.appendChild(reputazioneEl); statsBar.appendChild(c); }
+        if (studioEl) { resetElement(studioEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.innerHTML = '<small>🎓 Profitto</small>'; c.appendChild(studioEl); statsBar.appendChild(c); }
+        container.appendChild(statsBar);
+
+        // Subject list
+        const subjectList = document.createElement('div');
+        subjectList.className = 'scuola-subject-list';
+
+        const subjectNames = [
+            'Agraria', 'Fisica', 'Attività culturali', 'Attività matematiche',
+            'Scienze industriali', 'Elettrochimica', 'Petrolchimica', 'Filosofia aziendale', 'Metallurgia'
+        ];
+
+        for (let i = 1; i <= 9; i++) {
+            const radioId = 109 + i; // 110..118
+            const gradeId = 119 + i; // 120..128
+            const radio = body.querySelector(`.control${radioId}`);
+            const grade = body.querySelector(`.control${gradeId}`);
+
+            const card = document.createElement('div');
+            card.className = 'scuola-subject-card';
+            card.setAttribute('data-radio-id', radioId);
+
+            if (radio) {
+                resetElement(radio);
+                radio.id = `scuola_radio_${radioId}`;
+                radio.name = 'bor_radio10';
+                if (i === 1) radio.checked = true;
+                card.appendChild(radio);
             }
 
-            c.querySelector('.content').innerText = UTF8ToString(lpText);
-            setActiveWindow(hWnd);
-            showWindow(hWnd, 1);
-            centerWindow(c);
+            const label = document.createElement('label');
+            label.htmlFor = `scuola_radio_${radioId}`;
+            label.className = 'subject-name';
+            label.innerText = subjectNames[i - 1];
+            card.appendChild(label);
 
-            function handleChoice(resVal) {
-                destroyWindow(hWnd);
-                resolve(resVal);
+            if (grade) {
+                resetElement(grade);
+                const gradeBadge = document.createElement('span');
+                gradeBadge.className = 'subject-grade-badge';
+                gradeBadge.innerHTML = 'Voto: ';
+                gradeBadge.appendChild(grade);
+                card.appendChild(gradeBadge);
             }
 
-            c.querySelector('.control1').onclick = (e) => { e.stopPropagation(); handleChoice(1); };
-            c.querySelector('.control2').onclick = (e) => { e.stopPropagation(); handleChoice(2); };
-            c.querySelector('.control6').onclick = (e) => { e.stopPropagation(); handleChoice(6); };
-            c.querySelector('.control7').onclick = (e) => { e.stopPropagation(); handleChoice(7); };
-            const closeBtn = c.querySelector('.title-bar-controls button');
-            if (closeBtn) closeBtn.onclick = (e) => { e.stopPropagation(); handleChoice(uType & 0x00000004 ? 7 : (uType & 0x00000001 ? 2 : 1)); };
+            card.onclick = () => {
+                if (radio) {
+                    radio.checked = true;
+                    if (typeof _PostMessage === 'function') {
+                        _PostMessage(_activeWindowHwnd, WM_COMMAND, radioId, 0);
+                        stopWaiting();
+                    }
+                    subjectList.querySelectorAll('.scuola-subject-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                }
+            };
+
+            if (i === 1) card.classList.add('selected');
+            subjectList.appendChild(card);
+        }
+        container.appendChild(subjectList);
+
+        // Action Buttons Drawer
+        const actionsDrawer = document.createElement('div');
+        actionsDrawer.className = 'mobile-actions-drawer';
+        if (btnStudia) {
+            resetElement(btnStudia);
+            btnStudia.classList.add('btn-scuola-action', 'btn-studia');
+            actionsDrawer.appendChild(btnStudia);
+        }
+        if (btnMinaccia) {
+            resetElement(btnMinaccia);
+            btnMinaccia.classList.add('btn-scuola-action', 'btn-minaccia');
+            actionsDrawer.appendChild(btnMinaccia);
+        }
+        if (btnCorrompi) {
+            resetElement(btnCorrompi);
+            btnCorrompi.classList.add('btn-scuola-action', 'btn-corrompi');
+            actionsDrawer.appendChild(btnCorrompi);
+        }
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.innerHTML = '✓ Torna a Casa';
+            actionsDrawer.appendChild(btnOk);
+        }
+        container.appendChild(actionsDrawer);
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformTabacchi(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const soldiEl = body.querySelector('.control104') || body.querySelector('.control150');
+        const sizzeEl = body.querySelector('.control105');
+        const msgEl = body.querySelector('.control106');
+        const btnOk = body.querySelector('.control1');
+        const btnCancel = body.querySelector('.control2');
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-tabacchi-view';
+
+        // Sticky Wallet & Cigarette Counter
+        const statsBar = document.createElement('div');
+        statsBar.className = 'mobile-stats-bar';
+        if (soldiEl) { resetElement(soldiEl); const c = document.createElement('div'); c.className = 'mini-stat stat-soldi'; c.innerHTML = '<small>💰 Soldi</small>'; c.appendChild(soldiEl); statsBar.appendChild(c); }
+        if (sizzeEl) { resetElement(sizzeEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.innerHTML = '<small>🚬 Sizze</small>'; c.appendChild(sizzeEl); statsBar.appendChild(c); }
+        container.appendChild(statsBar);
+
+        if (msgEl) {
+            resetElement(msgEl);
+            msgEl.className += ' tabacchi-msg-banner';
+            container.appendChild(msgEl);
+        }
+
+        // Cigarette Packs Grid (4 columns)
+        const packsGrid = document.createElement('div');
+        packsGrid.className = 'tabacchi-packs-grid';
+        const packs = body.querySelectorAll('img.dlg_item');
+        packs.forEach(pack => {
+            resetElement(pack);
+            const packCard = document.createElement('div');
+            packCard.className = 'pack-card';
+            packCard.appendChild(pack);
+            packsGrid.appendChild(packCard);
+        });
+        container.appendChild(packsGrid);
+
+        // Sticky Bottom Actions
+        const actionsBar = document.createElement('div');
+        actionsBar.className = 'mobile-bottom-bar';
+        if (btnCancel) { resetElement(btnCancel); btnCancel.innerHTML = '✕ Esci'; actionsBar.appendChild(btnCancel); }
+        if (btnOk) { resetElement(btnOk); btnOk.innerHTML = '✓ Compra'; actionsBar.appendChild(btnOk); }
+        container.appendChild(actionsBar);
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformNegoziMenu(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const soldiEl = body.querySelector('.control120') || body.querySelector('.control104') || body.querySelector('.control150');
+        const btnOk = body.querySelector('.control1');
+
+        const buttons = Array.from(body.querySelectorAll('button.dlg_item')).filter(b => !b.classList.contains('control1'));
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-negozi-menu';
+
+        if (soldiEl) {
+            resetElement(soldiEl);
+            const bar = document.createElement('div'); bar.className = 'mobile-stats-bar';
+            const c = document.createElement('div'); c.className = 'mini-stat stat-soldi';
+            c.innerHTML = '<small>💰 Soldi Disponibili</small>';
+            c.appendChild(soldiEl);
+            bar.appendChild(c);
+            container.appendChild(bar);
+        }
+
+        const list = document.createElement('div');
+        list.className = 'negozi-buttons-list';
+
+        const icons = {
+            'Bau House': '🧥',
+            'Blue Rider': '👕',
+            'Zoccolaro': '👞',
+            'Footsmocker': '👟',
+            'Footsmocker II': '👟',
+            'Bar Tabacchi': '🚬',
+            'Palestra': '💪',
+            'Telefonino': '📱'
+        };
+
+        buttons.forEach(btn => {
+            resetElement(btn);
+            const text = btn.innerText.trim();
+            const icon = icons[text] || '🛍️';
+            btn.innerHTML = `<span class="btn-icon">${icon}</span> <span class="btn-text">${text}</span> <span class="btn-chevron">›</span>`;
+            list.appendChild(btn);
+        });
+        container.appendChild(list);
+
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.innerHTML = '✓ Torna alla Dashboard';
+            const bar = document.createElement('div');
+            bar.className = 'mobile-bottom-bar';
+            bar.appendChild(btnOk);
+            container.appendChild(bar);
+        }
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformScooter(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const soldiEl = body.querySelector('.control104') || body.querySelector('.control150');
+        const velocitaEl = body.querySelector('.control110') || body.querySelector('.control105');
+        const cilindrataEl = body.querySelector('.control113') || body.querySelector('.control106');
+        const efficienzaEl = body.querySelector('.control115') || body.querySelector('.control107');
+        const benzinaEl = body.querySelector('.control107') || body.querySelector('.control108');
+        const nomeScooterEl = body.querySelector('.control116');
+
+        const btnConcess = body.querySelector('.control101');
+        const btnTrucca = body.querySelector('.control102');
+        const btnRipara = body.querySelector('.control103');
+        const btnParcheggia = body.querySelector('.control105') || body.querySelector('.control109');
+        const btnBenza = body.querySelector('.control106') || body.querySelector('.control110');
+        const btnOk = body.querySelector('.control1');
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-scooter-view';
+
+        // Gauges & Stats Grid
+        const statsGrid = document.createElement('div');
+        statsGrid.className = 'scooter-stats-grid';
+        if (nomeScooterEl) { resetElement(nomeScooterEl); const c = document.createElement('div'); c.className = 'stat-card'; c.style.gridColumn = 'span 2'; c.innerHTML = '<span class="stat-label">🛵 Modello:</span>'; c.appendChild(nomeScooterEl); statsGrid.appendChild(c); }
+        if (soldiEl) { resetElement(soldiEl); const c = document.createElement('div'); c.className = 'stat-card stat-soldi'; c.innerHTML = '<span class="stat-label">💰 Soldi:</span>'; c.appendChild(soldiEl); statsGrid.appendChild(c); }
+        if (velocitaEl) { resetElement(velocitaEl); const c = document.createElement('div'); c.className = 'stat-card'; c.innerHTML = '<span class="stat-label">⚡ Velocità:</span>'; c.appendChild(velocitaEl); statsGrid.appendChild(c); }
+        if (cilindrataEl) { resetElement(cilindrataEl); const c = document.createElement('div'); c.className = 'stat-card'; c.innerHTML = '<span class="stat-label">🚀 Cilindrata:</span>'; c.appendChild(cilindrataEl); statsGrid.appendChild(c); }
+        if (efficienzaEl) { resetElement(efficienzaEl); const c = document.createElement('div'); c.className = 'stat-card'; c.innerHTML = '<span class="stat-label">🔧 Efficienza:</span>'; c.appendChild(efficienzaEl); statsGrid.appendChild(c); }
+        if (benzinaEl) { resetElement(benzinaEl); const c = document.createElement('div'); c.className = 'stat-card'; c.innerHTML = '<span class="stat-label">⛽ Benzina:</span>'; c.appendChild(benzinaEl); statsGrid.appendChild(c); }
+        container.appendChild(statsGrid);
+
+        // Actions List
+        const actionsList = document.createElement('div');
+        actionsList.className = 'scooter-actions-list';
+        if (btnConcess) { resetElement(btnConcess); btnConcess.innerHTML = '🏬 Concessionario'; actionsList.appendChild(btnConcess); }
+        if (btnTrucca) { resetElement(btnTrucca); btnTrucca.innerHTML = '⚡ Trucca Scooter'; actionsList.appendChild(btnTrucca); }
+        if (btnRipara) { resetElement(btnRipara); btnRipara.innerHTML = '🔧 Ripara Scooter'; actionsList.appendChild(btnRipara); }
+        if (btnBenza) { resetElement(btnBenza); btnBenza.innerHTML = '⛽ Fai Benza'; actionsList.appendChild(btnBenza); }
+        if (btnParcheggia) { resetElement(btnParcheggia); btnParcheggia.innerHTML = '🅿️ Parcheggia/Usa Scooter'; actionsList.appendChild(btnParcheggia); }
+        container.appendChild(actionsList);
+
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.innerHTML = '✓ Torna alla Dashboard';
+            const bar = document.createElement('div');
+            bar.className = 'mobile-bottom-bar';
+            bar.appendChild(btnOk);
+            container.appendChild(bar);
+        }
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformShop(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const soldiEl = body.querySelector('.control120') || body.querySelector('.control104');
+        const figoEl = body.querySelector('.control121') || body.querySelector('.control105');
+        const btnOk = body.querySelector('.control1');
+        const btnCancel = body.querySelector('.control2');
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-shop-view';
+
+        // Stats Header
+        const statsBar = document.createElement('div');
+        statsBar.className = 'mobile-stats-bar';
+        if (soldiEl) { resetElement(soldiEl); const c = document.createElement('div'); c.className = 'mini-stat stat-soldi'; c.innerHTML = '<small>💰 Soldi</small>'; c.appendChild(soldiEl); statsBar.appendChild(c); }
+        if (figoEl) { resetElement(figoEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.innerHTML = '<small>⭐ Figosità</small>'; c.appendChild(figoEl); statsBar.appendChild(c); }
+        container.appendChild(statsBar);
+
+        // 3 Products Cards
+        const productsList = document.createElement('div');
+        productsList.className = 'shop-products-list';
+
+        const radios = [body.querySelector('.control101'), body.querySelector('.control102'), body.querySelector('.control103')];
+        const imgs = [body.querySelector('.control501'), body.querySelector('.control502'), body.querySelector('.control503')];
+        const statics = Array.from(body.querySelectorAll('.control[data-class="STATIC"], .dlg_item[data-class="STATIC"]')).filter(el => !el.classList.contains('control120') && !el.classList.contains('control121') && !el.classList.contains('control104') && !el.classList.contains('control105'));
+
+        for (let i = 0; i < 3; i++) {
+            const radio = radios[i];
+            const img = imgs[i];
+            const desc = statics[i];
+
+            const card = document.createElement('div');
+            card.className = 'shop-product-card';
+
+            if (img) {
+                resetElement(img);
+                card.appendChild(img);
+            }
+
+            const info = document.createElement('div');
+            info.className = 'product-info';
+
+            if (radio) {
+                resetElement(radio);
+                const radioId = 101 + i;
+                radio.id = `shop_radio_${radioId}`;
+                radio.name = 'bor_radio_shop';
+                const row = document.createElement('div');
+                row.className = 'product-radio-row';
+                row.appendChild(radio);
+
+                const label = document.createElement('label');
+                label.htmlFor = `shop_radio_${radioId}`;
+                label.innerText = radio.parentElement?.querySelector('label')?.innerText || `Opzione ${i + 1}`;
+                row.appendChild(label);
+                info.appendChild(row);
+            }
+
+            if (desc) {
+                resetElement(desc);
+                desc.className = 'product-desc';
+                info.appendChild(desc);
+            }
+
+            card.appendChild(info);
+
+            card.onclick = () => {
+                if (radio) {
+                    radio.checked = true;
+                    if (typeof _PostMessage === 'function') {
+                        _PostMessage(_activeWindowHwnd, WM_COMMAND, 101 + i, 0);
+                        stopWaiting();
+                    }
+                    productsList.querySelectorAll('.shop-product-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                }
+            };
+
+            if (i === 0 && radio) { radio.checked = true; card.classList.add('selected'); }
+            productsList.appendChild(card);
+        }
+        container.appendChild(productsList);
+
+        // Sticky Bottom Actions Bar
+        const actionsBar = document.createElement('div');
+        actionsBar.className = 'mobile-bottom-bar';
+        if (btnCancel) { resetElement(btnCancel); btnCancel.innerHTML = '✕ Annulla'; actionsBar.appendChild(btnCancel); }
+        if (btnOk) { resetElement(btnOk); btnOk.innerHTML = '✓ Compra'; actionsBar.appendChild(btnOk); }
+        container.appendChild(actionsBar);
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformDisco(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const soldiEl = body.querySelector('.control110') || body.querySelector('.control104');
+        const descEl = body.querySelector('.control120');
+        const btnOk = body.querySelector('.control1');
+        const btnCancel = body.querySelector('.control2');
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-disco-view';
+
+        if (soldiEl) {
+            resetElement(soldiEl);
+            const bar = document.createElement('div'); bar.className = 'mobile-stats-bar';
+            const c = document.createElement('div'); c.className = 'mini-stat stat-soldi';
+            c.innerHTML = '<small>💰 Soldi Disponibili</small>';
+            c.appendChild(soldiEl);
+            bar.appendChild(c);
+            container.appendChild(bar);
+        }
+
+        const discosList = document.createElement('div');
+        discosList.className = 'disco-list';
+
+        const discoNames = [
+            'La Gare', 'Karma', 'Shocking', 'Aquafan',
+            'Number One', 'Dylan', 'Hollywood', 'StudioZ'
+        ];
+
+        for (let i = 1; i <= 8; i++) {
+            const radioId = 100 + i;
+            const radio = body.querySelector(`.control${radioId}`);
+
+            const card = document.createElement('div');
+            card.className = 'disco-card';
+
+            if (radio) {
+                resetElement(radio);
+                radio.id = `disco_radio_${radioId}`;
+                radio.name = 'bor_radio_disco';
+                if (i === 1) radio.checked = true;
+                card.appendChild(radio);
+            }
+
+            const label = document.createElement('label');
+            label.htmlFor = `disco_radio_${radioId}`;
+            label.innerText = discoNames[i - 1] || `Discoteca ${i}`;
+            card.appendChild(label);
+
+            card.onclick = () => {
+                if (radio) {
+                    radio.checked = true;
+                    if (typeof _PostMessage === 'function') {
+                        _PostMessage(_activeWindowHwnd, WM_COMMAND, radioId, 0);
+                        stopWaiting();
+                    }
+                    discosList.querySelectorAll('.disco-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                }
+            };
+
+            if (i === 1) card.classList.add('selected');
+            discosList.appendChild(card);
+        }
+        container.appendChild(discosList);
+
+        if (descEl) {
+            resetElement(descEl);
+            descEl.classList.add('disco-desc-card');
+            container.appendChild(descEl);
+        }
+
+        const actionsBar = document.createElement('div');
+        actionsBar.className = 'mobile-bottom-bar';
+        if (btnCancel) { resetElement(btnCancel); btnCancel.innerHTML = '✕ Torna a Casa'; actionsBar.appendChild(btnCancel); }
+        if (btnOk) { resetElement(btnOk); btnOk.innerHTML = '🪩 Entra in Disco'; actionsBar.appendChild(btnOk); }
+        container.appendChild(actionsBar);
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformFamiglia(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const soldiEl = body.querySelector('.control104');
+        const paghettaEl = body.querySelector('.control105');
+        const btnOk = getButtonOk(body);
+
+        const btn1 = body.querySelector('.control101');
+        const btn2 = body.querySelector('.control102');
+        const btn3 = body.querySelector('.control103');
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-famiglia-view';
+
+        const statsBar = document.createElement('div');
+        statsBar.className = 'mobile-stats-bar';
+        if (soldiEl) { resetElement(soldiEl); const c = document.createElement('div'); c.className = 'mini-stat stat-soldi'; c.innerHTML = '<small>💰 Soldi</small>'; c.appendChild(soldiEl); statsBar.appendChild(c); }
+        if (paghettaEl) { resetElement(paghettaEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.innerHTML = '<small>💵 Paghetta</small>'; c.appendChild(paghettaEl); statsBar.appendChild(c); }
+        container.appendChild(statsBar);
+
+        const actionsList = document.createElement('div');
+        actionsList.className = 'famiglia-actions-list';
+        if (btn1) { resetElement(btn1); btn1.innerHTML = '📈 Chiedi aumento paghetta'; actionsList.appendChild(btn1); }
+        if (btn2) { resetElement(btn2); btn2.innerHTML = '💸 Chiedi soldi extra'; actionsList.appendChild(btn2); }
+        if (btn3) { resetElement(btn3); btn3.innerHTML = '🤑 Papà, mi dai 100.000 lire?'; actionsList.appendChild(btn3); }
+        container.appendChild(actionsList);
+
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.className += ' button_ok';
+            btnOk.innerHTML = '✓ Torna alla Dashboard';
+            const bar = document.createElement('div');
+            bar.className = 'mobile-bottom-bar';
+            bar.appendChild(btnOk);
+            container.appendChild(bar);
+        }
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformCompagnia(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const img = body.querySelector('img.control259') || body.querySelector('canvas') || body.querySelector('img');
+        const repEl = body.querySelector('.control104');
+        const btnOk = getButtonOk(body);
+
+        const btn1 = body.querySelector('.control101');
+        const btn2 = body.querySelector('.control102');
+        const btn3 = body.querySelector('.control103');
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-compagnia-view';
+
+        if (img) {
+            resetElement(img);
+            const imgCard = document.createElement('div');
+            imgCard.className = 'compagnia-hero-card';
+            imgCard.appendChild(img);
+            container.appendChild(imgCard);
+        }
+
+        if (repEl) {
+            resetElement(repEl);
+            const bar = document.createElement('div'); bar.className = 'mobile-stats-bar';
+            const c = document.createElement('div'); c.className = 'mini-stat';
+            c.innerHTML = '<small>👑 Reputazione Compagnia</small>';
+            c.appendChild(repEl);
+            bar.appendChild(c);
+            container.appendChild(bar);
+        }
+
+        const actionsList = document.createElement('div');
+        actionsList.className = 'compagnia-actions-list';
+        if (btn1) { resetElement(btn1); btn1.innerHTML = '🛵 Gareggia con lo scooter'; actionsList.appendChild(btn1); }
+        if (btn2) { resetElement(btn2); btn2.innerHTML = '🍻 Esci con la compagnia'; actionsList.appendChild(btn2); }
+        if (btn3) { resetElement(btn3); btn3.innerHTML = '📱 Chiama la compagnia'; actionsList.appendChild(btn3); }
+        container.appendChild(actionsList);
+
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.className += ' button_ok';
+            btnOk.innerHTML = '✓ Torna alla Dashboard';
+            const bar = document.createElement('div');
+            bar.className = 'mobile-bottom-bar';
+            bar.appendChild(btnOk);
+            container.appendChild(bar);
+        }
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformTipa(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const canvas = body.querySelector('canvas') || body.querySelector('.bmptipa');
+        const nomeEl = body.querySelector('.control105');
+        const figoEl = body.querySelector('.control106');
+        const affinitaEl = body.querySelector('.control107');
+        const myFigoEl = body.querySelector('.control104');
+        const btnOk = body.querySelector('.control1');
+
+        const btnCerca = body.querySelector('.control110');
+        const btnLascia = body.querySelector('.control111');
+        const btnChiama = body.querySelector('.control112');
+        const btnEsci = body.querySelector('.control113');
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-tipa-view';
+
+        if (canvas) {
+            resetElement(canvas);
+            const card = document.createElement('div');
+            card.className = 'tipa-hero-card';
+            card.appendChild(canvas);
+            container.appendChild(card);
+        }
+
+        const statsBar = document.createElement('div');
+        statsBar.className = 'mobile-stats-bar';
+        if (nomeEl) { resetElement(nomeEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.innerHTML = '<small>💋 Nome Tipa</small>'; c.appendChild(nomeEl); statsBar.appendChild(c); }
+        if (affinitaEl) { resetElement(affinitaEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.innerHTML = '<small>❤️ Affinità</small>'; c.appendChild(affinitaEl); statsBar.appendChild(c); }
+        if (figoEl) { resetElement(figoEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.innerHTML = '<small>⭐ Figosità Tipa</small>'; c.appendChild(figoEl); statsBar.appendChild(c); }
+        container.appendChild(statsBar);
+
+        const actionsList = document.createElement('div');
+        actionsList.className = 'tipa-actions-list';
+        if (btnEsci) { resetElement(btnEsci); btnEsci.innerHTML = '🥂 Esci con la tipa'; actionsList.appendChild(btnEsci); }
+        if (btnChiama) { resetElement(btnChiama); btnChiama.innerHTML = '📞 Telefona alla tipa'; actionsList.appendChild(btnChiama); }
+        if (btnCerca) { resetElement(btnCerca); btnCerca.innerHTML = '🔍 Cerca nuova tipa'; actionsList.appendChild(btnCerca); }
+        if (btnLascia) { resetElement(btnLascia); btnLascia.innerHTML = '💔 Lascia tipa'; btnLascia.className += ' btn-danger'; actionsList.appendChild(btnLascia); }
+        container.appendChild(actionsList);
+
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.innerHTML = '✓ Torna alla Dashboard';
+            const bar = document.createElement('div');
+            bar.className = 'mobile-bottom-bar';
+            bar.appendChild(btnOk);
+            container.appendChild(bar);
+        }
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformLavoro(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const img = body.querySelector('img.control254') || body.querySelector('canvas');
+        const dittaEl = body.querySelector('.control105');
+        const soldiEl = body.querySelector('.control104');
+        const stipendioEl = body.querySelector('.control106');
+        const impegnoEl = body.querySelector('.control107');
+        const btnOk = body.querySelector('.control1');
+
+        const btnCercaLavoro = body.querySelector('.control110');
+        const btnLicenziati = body.querySelector('.control111');
+        const btnAumento = body.querySelector('.control112');
+        const btnLeccaculo = body.querySelector('.control113');
+        const btnInfo = body.querySelector('.control114');
+        const btnSciopera = body.querySelector('.control115');
+        const btnLavora = body.querySelector('.control116');
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-lavoro-view';
+
+        // Workplace Image
+        if (img) {
+            resetElement(img);
+            const imgCard = document.createElement('div');
+            imgCard.className = 'lavoro-hero-card';
+            imgCard.appendChild(img);
+            container.appendChild(imgCard);
+        }
+
+        // Company & Stats
+        const statsBar = document.createElement('div');
+        statsBar.className = 'mobile-stats-bar';
+        if (dittaEl) { resetElement(dittaEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.style.flex = '2'; c.innerHTML = '<small>🏢 Ditta</small>'; c.appendChild(dittaEl); statsBar.appendChild(c); }
+        if (soldiEl) { resetElement(soldiEl); const c = document.createElement('div'); c.className = 'mini-stat stat-soldi'; c.innerHTML = '<small>💰 Soldi</small>'; c.appendChild(soldiEl); statsBar.appendChild(c); }
+        container.appendChild(statsBar);
+
+        const statsBar2 = document.createElement('div');
+        statsBar2.className = 'mobile-stats-bar';
+        if (stipendioEl) { resetElement(stipendioEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.innerHTML = '<small>💵 Stipendio</small>'; c.appendChild(stipendioEl); statsBar2.appendChild(c); }
+        if (impegnoEl) { resetElement(impegnoEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.innerHTML = '<small>📊 Impegno</small>'; c.appendChild(impegnoEl); statsBar2.appendChild(c); }
+        container.appendChild(statsBar2);
+
+        // Action Buttons
+        const actionsList = document.createElement('div');
+        actionsList.className = 'lavoro-actions-list';
+        if (btnCercaLavoro) { resetElement(btnCercaLavoro); btnCercaLavoro.innerHTML = '🔍 Cerca lavoro'; actionsList.appendChild(btnCercaLavoro); }
+        if (btnLavora) { resetElement(btnLavora); btnLavora.innerHTML = '💼 Lavora'; actionsList.appendChild(btnLavora); }
+        if (btnLeccaculo) { resetElement(btnLeccaculo); btnLeccaculo.innerHTML = '😏 Fai il leccaculo'; actionsList.appendChild(btnLeccaculo); }
+        if (btnAumento) { resetElement(btnAumento); btnAumento.innerHTML = '📈 Chiedi aumento salario'; actionsList.appendChild(btnAumento); }
+        if (btnSciopera) { resetElement(btnSciopera); btnSciopera.innerHTML = '✊ Sciopera'; actionsList.appendChild(btnSciopera); }
+        if (btnInfo) { resetElement(btnInfo); btnInfo.innerHTML = 'ℹ️ Informazioni'; actionsList.appendChild(btnInfo); }
+        if (btnLicenziati) { resetElement(btnLicenziati); btnLicenziati.innerHTML = '🚪 Licenziati'; btnLicenziati.className += ' btn-danger'; actionsList.appendChild(btnLicenziati); }
+        container.appendChild(actionsList);
+
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.innerHTML = '✓ Torna alla Dashboard';
+            const bar = document.createElement('div');
+            bar.className = 'mobile-bottom-bar';
+            bar.appendChild(btnOk);
+            container.appendChild(bar);
+        }
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformPalestra(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const soldiEl = body.querySelector('.control104');
+        const btnOk = body.querySelector('.control1');
+        const btnCancel = body.querySelector('.control2');
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-palestra-view';
+
+        if (soldiEl) {
+            resetElement(soldiEl);
+            const bar = document.createElement('div'); bar.className = 'mobile-stats-bar';
+            const c = document.createElement('div'); c.className = 'mini-stat stat-soldi';
+            c.innerHTML = '<small>💰 Soldi</small>';
+            c.appendChild(soldiEl);
+            bar.appendChild(c);
+            container.appendChild(bar);
+        }
+
+        // Get all action buttons except OK/Cancel
+        const buttons = Array.from(body.querySelectorAll('button.dlg_item')).filter(b =>
+            !b.classList.contains('control1') && !b.classList.contains('control2'));
+
+        const actionsList = document.createElement('div');
+        actionsList.className = 'palestra-actions-list';
+        buttons.forEach(btn => {
+            resetElement(btn);
+            actionsList.appendChild(btn);
+        });
+        container.appendChild(actionsList);
+
+        const actionsBar = document.createElement('div');
+        actionsBar.className = 'mobile-bottom-bar';
+        if (btnCancel) { resetElement(btnCancel); btnCancel.innerHTML = '✕ Esci'; actionsBar.appendChild(btnCancel); }
+        if (btnOk) { resetElement(btnOk); btnOk.innerHTML = '✓ Fatto'; actionsBar.appendChild(btnOk); }
+        container.appendChild(actionsBar);
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformSplash(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        // Just make the splash image fit nicely and hide decorative elements
+        body.querySelectorAll('.BorShade, .ws_border, .horizontal_bump, .vertical_bump').forEach(el => {
+            if (!el.classList.contains('dlg_item')) el.style.display = 'none';
+        });
+        body.querySelectorAll('.dlg_item, img, canvas').forEach(el => {
+            el.style.position = 'static';
+            el.style.left = 'auto';
+            el.style.top = 'auto';
+            el.style.maxWidth = '100%';
+            el.style.height = 'auto';
+        });
+    }
+
+    function transformJobOffer(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const img = body.querySelector('img.dlg_item') || body.querySelector('img');
+        const btnPresento = body.querySelector('.control1');
+        const btnLascio = body.querySelector('.control2');
+        const statics = Array.from(body.querySelectorAll('.control[data-class="STATIC"], div.ss_center, div[data-class="STATIC"]'));
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-job-offer-view';
+
+        if (img) {
+            resetElement(img);
+            const card = document.createElement('div');
+            card.className = 'job-hero-card';
+            card.appendChild(img);
+            container.appendChild(card);
+        }
+
+        const descCard = document.createElement('div');
+        descCard.className = 'job-offer-desc-card';
+        statics.forEach(st => {
+            resetElement(st);
+            descCard.appendChild(st);
+        });
+        container.appendChild(descCard);
+
+        const actionsBar = document.createElement('div');
+        actionsBar.className = 'mobile-bottom-bar';
+        if (btnLascio) { resetElement(btnLascio); btnLascio.className += ' mobile-btn secondary'; actionsBar.appendChild(btnLascio); }
+        if (btnPresento) { resetElement(btnPresento); btnPresento.className += ' button_ok'; actionsBar.appendChild(btnPresento); }
+        container.appendChild(actionsBar);
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformJobQuiz(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const btnSubmit = body.querySelector('.control1');
+
+        // Extract checkboxes with their original labels and vertical positions
+        const checkContainers = Array.from(body.querySelectorAll('div')).filter(d => d.querySelector('input[type="checkbox"], input.bwcc'));
+        const checkItems = checkContainers.map(d => {
+            const chk = d.querySelector('input');
+            const lbl = d.querySelector('label');
+            const top = parseInt(d.style.top) || 0;
+            return { chk, lbl, top };
+        }).sort((a, b) => a.top - b.top);
+
+        // Extract and sort statics/questions by original top position
+        const statics = Array.from(body.querySelectorAll('.control[data-class="BorStatic"], .control[data-class="STATIC"]'))
+            .map(st => ({ el: st, top: parseInt(st.style.top) || 0 }))
+            .sort((a, b) => a.top - b.top);
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-quiz-view';
+
+        if (statics.length > 0) {
+            const introCard = document.createElement('div');
+            introCard.className = 'quiz-intro-card';
+            statics.forEach(item => {
+                resetElement(item.el);
+                item.el.style.marginBottom = '4px';
+                introCard.appendChild(item.el);
+            });
+            container.appendChild(introCard);
+        }
+
+        if (checkItems.length > 0) {
+            const optionsCard = document.createElement('div');
+            optionsCard.className = 'quiz-options-card';
+            checkItems.forEach(item => {
+                resetElement(item.chk);
+                const row = document.createElement('div');
+                row.className = 'quiz-checkbox-row';
+                row.appendChild(item.chk);
+                if (item.lbl) {
+                    resetElement(item.lbl);
+                    item.lbl.style.cursor = 'pointer';
+                    item.lbl.style.flex = '1';
+                    row.appendChild(item.lbl);
+                }
+                row.onclick = (e) => {
+                    if (e.target !== item.chk) {
+                        item.chk.checked = !item.chk.checked;
+                        const match = item.chk.className.match(/\d+/);
+                        if (match && typeof _PostMessage === 'function') {
+                            _PostMessage(_activeWindowHwnd, WM_COMMAND, Number(match[0]), 0);
+                            stopWaiting();
+                        }
+                    }
+                };
+                optionsCard.appendChild(row);
+            });
+            container.appendChild(optionsCard);
+        }
+
+        if (btnSubmit) {
+            resetElement(btnSubmit);
+            btnSubmit.className += ' button_ok mobile-btn primary';
+            const bar = document.createElement('div');
+            bar.className = 'mobile-bottom-bar';
+            bar.appendChild(btnSubmit);
+            container.appendChild(bar);
+        }
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformCompanyList(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const img = body.querySelector('img.control289') || body.querySelector('img');
+        const btnOk = body.querySelector('.control1');
+        const buttons = Array.from(body.querySelectorAll('button.dlg_item')).filter(b => !b.classList.contains('control1'));
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-company-list-view';
+
+        if (img) {
+            resetElement(img);
+            const card = document.createElement('div');
+            card.className = 'company-hero-card';
+            card.appendChild(img);
+            container.appendChild(card);
+        }
+
+        const list = document.createElement('div');
+        list.className = 'company-buttons-list';
+        buttons.forEach(btn => {
+            resetElement(btn);
+            const text = btn.innerText.trim();
+            btn.innerHTML = `<span class="btn-icon">🏢</span> <span class="btn-text">${text}</span> <span class="btn-chevron">›</span>`;
+            list.appendChild(btn);
+        });
+        container.appendChild(list);
+
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.innerHTML = '✓ Torna Indietro';
+            const bar = document.createElement('div');
+            bar.className = 'mobile-bottom-bar';
+            bar.appendChild(btnOk);
+            container.appendChild(bar);
+        }
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformCompanyInfo(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const img = body.querySelector('img.dlg_item') || body.querySelector('img');
+        const btnOk = body.querySelector('.control1');
+        const statics = Array.from(body.querySelectorAll('.control[data-class="STATIC"], .control[data-class="BorStatic"], div.ss_center'));
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-company-info-view';
+
+        if (img) {
+            resetElement(img);
+            const card = document.createElement('div');
+            card.className = 'company-hero-card';
+            card.appendChild(img);
+            container.appendChild(card);
+        }
+
+        const infoCard = document.createElement('div');
+        infoCard.className = 'company-info-card';
+        statics.forEach(st => {
+            resetElement(st);
+            infoCard.appendChild(st);
+        });
+        container.appendChild(infoCard);
+
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.innerHTML = '✓ Chiudi Informazioni';
+            const bar = document.createElement('div');
+            bar.className = 'mobile-bottom-bar';
+            bar.appendChild(btnOk);
+            container.appendChild(bar);
+        }
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformEventBeatdown(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const img = body.querySelector('img.dlg_item') || body.querySelector('canvas') || body.querySelector('img');
+        const locationEl = body.querySelector('.control111') || body.querySelector('.control[data-class="STATIC"]');
+        const btnOk = body.querySelector('.control1') || body.querySelector('.control2') || body.querySelector('button');
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-event-view';
+
+        if (img) {
+            resetElement(img);
+            const card = document.createElement('div');
+            card.className = 'event-hero-card';
+            card.appendChild(img);
+            container.appendChild(card);
+        }
+
+        if (locationEl) {
+            resetElement(locationEl);
+            const card = document.createElement('div');
+            card.className = 'event-desc-card';
+            card.appendChild(locationEl);
+            container.appendChild(card);
+        }
+
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.innerHTML = '✓ Continua';
+            const bar = document.createElement('div');
+            bar.className = 'mobile-bottom-bar';
+            bar.appendChild(btnOk);
+            container.appendChild(bar);
+        }
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformDate(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const img = body.querySelector('img.dlg_item') || body.querySelector('canvas') || body.querySelector('img');
+        const btnOk = body.querySelector('.control1');
+        const btnCancel = body.querySelector('.control2');
+        const buttons = Array.from(body.querySelectorAll('button.dlg_item')).filter(b => !b.classList.contains('control1') && !b.classList.contains('control2'));
+        const statics = Array.from(body.querySelectorAll('.control[data-class="STATIC"], .control[data-class="BorStatic"], .dlg_item[data-class="STATIC"]'));
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-date-view';
+
+        if (img) {
+            resetElement(img);
+            const card = document.createElement('div');
+            card.className = 'date-hero-card';
+            card.appendChild(img);
+            container.appendChild(card);
+        }
+
+        if (statics.length > 0) {
+            const infoCard = document.createElement('div');
+            infoCard.className = 'date-info-card';
+            statics.forEach(st => {
+                resetElement(st);
+                infoCard.appendChild(st);
+            });
+            container.appendChild(infoCard);
+        }
+
+        if (buttons.length > 0) {
+            const list = document.createElement('div');
+            list.className = 'date-actions-list';
+            buttons.forEach(btn => {
+                resetElement(btn);
+                list.appendChild(btn);
+            });
+            container.appendChild(list);
+        }
+
+        const actionsBar = document.createElement('div');
+        actionsBar.className = 'mobile-bottom-bar';
+        if (btnCancel) { resetElement(btnCancel); btnCancel.innerHTML = '✕ Annulla'; actionsBar.appendChild(btnCancel); }
+        if (btnOk) { resetElement(btnOk); btnOk.innerHTML = '✓ OK'; actionsBar.appendChild(btnOk); }
+        if (btnCancel || btnOk) container.appendChild(actionsBar);
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformCercaTipa(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const img = body.querySelector('img.control210') || body.querySelector('img.dlg_item') || body.querySelector('canvas') || body.querySelector('img');
+        const nomeEl = body.querySelector('.control105');
+        const figoEl = body.querySelector('.control106');
+        const giudizioEl = body.querySelector('.control107');
+
+        const btnCiProvo = body.querySelector('.control101');
+        const btnRitorno = getButtonCancel(body) || body.querySelector('.control2') || getButtonOk(body);
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-cerca-tipa-view';
+
+        if (img) {
+            resetElement(img);
+            const card = document.createElement('div');
+            card.className = 'cerca-tipa-hero-card';
+            card.appendChild(img);
+            container.appendChild(card);
+        }
+
+        const statsCard = document.createElement('div');
+        statsCard.className = 'cerca-tipa-stats-card';
+        if (nomeEl) { resetElement(nomeEl); const r = document.createElement('div'); r.className = 'tipa-stat-row'; r.innerHTML = '<span>💋 Nome:</span>'; r.appendChild(nomeEl); statsCard.appendChild(r); }
+        if (figoEl) { resetElement(figoEl); const r = document.createElement('div'); r.className = 'tipa-stat-row'; r.innerHTML = '<span>⭐ Figosità:</span>'; r.appendChild(figoEl); statsCard.appendChild(r); }
+        if (giudizioEl) { resetElement(giudizioEl); const r = document.createElement('div'); r.className = 'tipa-stat-row'; r.innerHTML = '<span>📊 Giudizio:</span>'; r.appendChild(giudizioEl); statsCard.appendChild(r); }
+        container.appendChild(statsCard);
+
+        const actionsBar = document.createElement('div');
+        actionsBar.className = 'mobile-bottom-bar';
+        if (btnRitorno) { resetElement(btnRitorno); btnRitorno.className += ' mobile-btn secondary'; btnRitorno.innerHTML = '✕ Ritorno a casa...'; actionsBar.appendChild(btnRitorno); }
+        if (btnCiProvo) { resetElement(btnCiProvo); btnCiProvo.className += ' button_ok'; btnCiProvo.innerHTML = '💘 Ci provo !'; actionsBar.appendChild(btnCiProvo); }
+        container.appendChild(actionsBar);
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformDueDonne(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const statics = Array.from(body.querySelectorAll('.control[data-class="STATIC"], div.ss_center'));
+        const buttons = Array.from(body.querySelectorAll('button.dlg_item'));
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-due-donne-view';
+
+        if (statics.length > 0) {
+            const descCard = document.createElement('div');
+            descCard.className = 'due-donne-desc-card';
+            statics.forEach(st => {
+                resetElement(st);
+                descCard.appendChild(st);
+            });
+            container.appendChild(descCard);
+        }
+
+        if (buttons.length > 0) {
+            const list = document.createElement('div');
+            list.className = 'due-donne-actions-list';
+            buttons.forEach(btn => {
+                resetElement(btn);
+                list.appendChild(btn);
+            });
+            container.appendChild(list);
+        }
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformDueDiPicche(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const img = body.querySelector('img.dlg_item') || body.querySelector('img');
+        const descEl = body.querySelector('.control105') || body.querySelector('.control[data-class="STATIC"]');
+        const btnOk = getButtonOk(body) || body.querySelector('button');
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-picche-view';
+
+        if (img) {
+            resetElement(img);
+            const card = document.createElement('div');
+            card.className = 'picche-hero-card';
+            card.appendChild(img);
+            container.appendChild(card);
+        }
+
+        if (descEl) {
+            resetElement(descEl);
+            const card = document.createElement('div');
+            card.className = 'picche-desc-card';
+            card.appendChild(descEl);
+            container.appendChild(card);
+        }
+
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.className += ' button_ok';
+            btnOk.innerHTML = '💔 Ci rinuncio...';
+            const bar = document.createElement('div');
+            bar.className = 'mobile-bottom-bar';
+            bar.appendChild(btnOk);
+            container.appendChild(bar);
+        }
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformScooterShop(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const img = body.querySelector('img.dlg_item') || body.querySelector('canvas') || body.querySelector('img');
+        const soldiEl = body.querySelector('.control104') || body.querySelector('.control150');
+        const btnOk = body.querySelector('.control1');
+        const btnCancel = body.querySelector('.control2');
+        const buttons = Array.from(body.querySelectorAll('button.dlg_item')).filter(b => !b.classList.contains('control1') && !b.classList.contains('control2'));
+        const statics = Array.from(body.querySelectorAll('.control[data-class="STATIC"], .control[data-class="BorStatic"], .dlg_item[data-class="STATIC"]')).filter(s => s !== soldiEl);
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-scooter-shop-view';
+
+        if (soldiEl) {
+            resetElement(soldiEl);
+            const bar = document.createElement('div'); bar.className = 'mobile-stats-bar';
+            const c = document.createElement('div'); c.className = 'mini-stat stat-soldi';
+            c.innerHTML = '<small>💰 Soldi</small>';
+            c.appendChild(soldiEl);
+            bar.appendChild(c);
+            container.appendChild(bar);
+        }
+
+        if (img) {
+            resetElement(img);
+            const card = document.createElement('div');
+            card.className = 'scooter-hero-card';
+            card.appendChild(img);
+            container.appendChild(card);
+        }
+
+        if (statics.length > 0) {
+            const descCard = document.createElement('div');
+            descCard.className = 'scooter-desc-card';
+            statics.forEach(st => {
+                resetElement(st);
+                descCard.appendChild(st);
+            });
+            container.appendChild(descCard);
+        }
+
+        if (buttons.length > 0) {
+            const list = document.createElement('div');
+            list.className = 'scooter-shop-actions-list';
+            buttons.forEach(btn => {
+                resetElement(btn);
+                list.appendChild(btn);
+            });
+            container.appendChild(list);
+        }
+
+        const actionsBar = document.createElement('div');
+        actionsBar.className = 'mobile-bottom-bar';
+        if (btnCancel) { resetElement(btnCancel); btnCancel.innerHTML = '✕ Esci'; actionsBar.appendChild(btnCancel); }
+        if (btnOk) { resetElement(btnOk); btnOk.innerHTML = '✓ Conferma'; actionsBar.appendChild(btnOk); }
+        if (btnCancel || btnOk) container.appendChild(actionsBar);
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformCellulare(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const img = body.querySelector('img.dlg_item') || body.querySelector('canvas') || body.querySelector('img');
+        const soldiEl = body.querySelector('.control104');
+        const creditoEl = body.querySelector('.control105');
+        const btnOk = body.querySelector('.control1');
+        const btnCancel = body.querySelector('.control2');
+        const buttons = Array.from(body.querySelectorAll('button.dlg_item')).filter(b => !b.classList.contains('control1') && !b.classList.contains('control2'));
+        const statics = Array.from(body.querySelectorAll('.control[data-class="STATIC"], .control[data-class="BorStatic"], .dlg_item[data-class="STATIC"]')).filter(s => s !== soldiEl && s !== creditoEl);
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-phone-view';
+
+        const statsBar = document.createElement('div');
+        statsBar.className = 'mobile-stats-bar';
+        if (soldiEl) { resetElement(soldiEl); const c = document.createElement('div'); c.className = 'mini-stat stat-soldi'; c.innerHTML = '<small>💰 Soldi</small>'; c.appendChild(soldiEl); statsBar.appendChild(c); }
+        if (creditoEl) { resetElement(creditoEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.innerHTML = '<small>📱 Credito</small>'; c.appendChild(creditoEl); statsBar.appendChild(c); }
+        if (soldiEl || creditoEl) container.appendChild(statsBar);
+
+        if (img) {
+            resetElement(img);
+            const card = document.createElement('div');
+            card.className = 'phone-hero-card';
+            card.appendChild(img);
+            container.appendChild(card);
+        }
+
+        if (statics.length > 0) {
+            const descCard = document.createElement('div');
+            descCard.className = 'phone-desc-card';
+            statics.forEach(st => {
+                resetElement(st);
+                descCard.appendChild(st);
+            });
+            container.appendChild(descCard);
+        }
+
+        if (buttons.length > 0) {
+            const list = document.createElement('div');
+            list.className = 'phone-actions-list';
+            buttons.forEach(btn => {
+                resetElement(btn);
+                list.appendChild(btn);
+            });
+            container.appendChild(list);
+        }
+
+        const actionsBar = document.createElement('div');
+        actionsBar.className = 'mobile-bottom-bar';
+        if (btnCancel) { resetElement(btnCancel); btnCancel.innerHTML = '✕ Indietro'; actionsBar.appendChild(btnCancel); }
+        if (btnOk) { resetElement(btnOk); btnOk.innerHTML = '✓ Torna alla Dashboard'; actionsBar.appendChild(btnOk); }
+        if (btnCancel || btnOk) container.appendChild(actionsBar);
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformScooterShowroom(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const soldiEl = body.querySelector('.control104');
+        const btnOk = body.querySelector('.control1');
+        const btnCancel = body.querySelector('.control2');
+
+        const radios = Array.from(body.querySelectorAll('input[type="radio"], input.bwcc'));
+        const images = Array.from(body.querySelectorAll('img.dlg_item, img.ws_border')).filter(img => !img.src.includes('SCOOTER.gif'));
+
+        const speedEl = body.querySelector('.control110');
+        const marmittaEl = body.querySelector('.control111');
+        const carburatoreEl = body.querySelector('.control112');
+        const cilindrataEl = body.querySelector('.control113');
+        const filtroEl = body.querySelector('.control114');
+        const costoEl = body.querySelector('.control117');
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-scooter-showroom-view';
+
+        if (soldiEl) {
+            resetElement(soldiEl);
+            const bar = document.createElement('div'); bar.className = 'mobile-stats-bar';
+            const c = document.createElement('div'); c.className = 'mini-stat stat-soldi';
+            c.innerHTML = '<small>💰 Soldi</small>';
+            c.appendChild(soldiEl);
+            bar.appendChild(c);
+            container.appendChild(bar);
+        }
+
+        // Models Selection List
+        const modelsGrid = document.createElement('div');
+        modelsGrid.className = 'scooter-models-grid';
+
+        radios.forEach((radio, idx) => {
+            resetElement(radio);
+            const parentDiv = radio.closest('div');
+            const label = parentDiv?.querySelector('label');
+            const img = images[idx];
+
+            const card = document.createElement('div');
+            card.className = 'scooter-model-card' + (radio.checked ? ' selected' : '');
+            if (img) {
+                resetElement(img);
+                card.appendChild(img);
+            }
+            const info = document.createElement('div');
+            info.className = 'scooter-model-info';
+            info.appendChild(radio);
+            if (label) {
+                resetElement(label);
+                info.appendChild(label);
+            }
+            card.appendChild(info);
+
+            card.onclick = () => {
+                radio.checked = true;
+                modelsGrid.querySelectorAll('.scooter-model-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                const match = radio.className.match(/\d+/);
+                if (match && typeof _PostMessage === 'function') {
+                    _PostMessage(_activeWindowHwnd, WM_COMMAND, Number(match[0]), 0);
+                    stopWaiting();
+                }
+            };
+            modelsGrid.appendChild(card);
+        });
+        container.appendChild(modelsGrid);
+
+        // Specs Grid
+        const specsCard = document.createElement('div');
+        specsCard.className = 'scooter-specs-card';
+        specsCard.innerHTML = '<h3 class="specs-title">Specifiche Modello</h3>';
+
+        const specsGrid = document.createElement('div');
+        specsGrid.className = 'specs-grid';
+
+        if (speedEl) { resetElement(speedEl); const r = document.createElement('div'); r.className = 'spec-row'; r.innerHTML = '<span>⚡ Velocità:</span>'; r.appendChild(speedEl); specsGrid.appendChild(r); }
+        if (cilindrataEl) { resetElement(cilindrataEl); const r = document.createElement('div'); r.className = 'spec-row'; r.innerHTML = '<span>🚀 Cilindrata:</span>'; r.appendChild(cilindrataEl); specsGrid.appendChild(r); }
+        if (marmittaEl) { resetElement(marmittaEl); const r = document.createElement('div'); r.className = 'spec-row'; r.innerHTML = '<span>💨 Marmitta:</span>'; r.appendChild(marmittaEl); specsGrid.appendChild(r); }
+        if (carburatoreEl) { resetElement(carburatoreEl); const r = document.createElement('div'); r.className = 'spec-row'; r.innerHTML = '<span>⚙️ Carburatore:</span>'; r.appendChild(carburatoreEl); specsGrid.appendChild(r); }
+        if (filtroEl) { resetElement(filtroEl); const r = document.createElement('div'); r.className = 'spec-row'; r.innerHTML = '<span>🌬️ Filtro aria:</span>'; r.appendChild(filtroEl); specsGrid.appendChild(r); }
+        if (costoEl) { resetElement(costoEl); const r = document.createElement('div'); r.className = 'spec-row spec-costo'; r.innerHTML = '<span>🏷️ Prezzo:</span>'; r.appendChild(costoEl); specsGrid.appendChild(r); }
+
+        specsCard.appendChild(specsGrid);
+        container.appendChild(specsCard);
+
+        const actionsBar = document.createElement('div');
+        actionsBar.className = 'mobile-bottom-bar';
+        if (btnCancel) { resetElement(btnCancel); btnCancel.innerHTML = '✕ Annulla'; actionsBar.appendChild(btnCancel); }
+        if (btnOk) { resetElement(btnOk); btnOk.innerHTML = '✓ Compra'; actionsBar.appendChild(btnOk); }
+        container.appendChild(actionsBar);
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformTruccaScooter(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const soldiEl = body.querySelector('.control104');
+        const nameEl = body.querySelector('.control116');
+        const speedEl = body.querySelector('.control110');
+        const marmittaEl = body.querySelector('.control111');
+        const carburatoreEl = body.querySelector('.control112');
+        const cilindrataEl = body.querySelector('.control113');
+        const filtroEl = body.querySelector('.control114');
+        const effEl = body.querySelector('.control115');
+
+        const btnCarb = body.querySelector('.control121');
+        const btnMarm = body.querySelector('.control122');
+        const btnPist = body.querySelector('.control123');
+        const btnFilt = body.querySelector('.control124');
+        const btnOk = body.querySelector('.control1');
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-trucca-scooter-view';
+
+        if (soldiEl) {
+            resetElement(soldiEl);
+            const bar = document.createElement('div'); bar.className = 'mobile-stats-bar';
+            const c = document.createElement('div'); c.className = 'mini-stat stat-soldi';
+            c.innerHTML = '<small>💰 Soldi</small>';
+            c.appendChild(soldiEl);
+            bar.appendChild(c);
+            container.appendChild(bar);
+        }
+
+        const specsCard = document.createElement('div');
+        specsCard.className = 'scooter-specs-card';
+        if (nameEl) { resetElement(nameEl); specsCard.innerHTML = `<h3 class="specs-title">🛵 ${nameEl.innerText || 'Scooter'}</h3>`; }
+
+        const specsGrid = document.createElement('div');
+        specsGrid.className = 'specs-grid';
+        if (speedEl) { resetElement(speedEl); const r = document.createElement('div'); r.className = 'spec-row'; r.innerHTML = '<span>⚡ Velocità:</span>'; r.appendChild(speedEl); specsGrid.appendChild(r); }
+        if (cilindrataEl) { resetElement(cilindrataEl); const r = document.createElement('div'); r.className = 'spec-row'; r.innerHTML = '<span>🚀 Cilindrata:</span>'; r.appendChild(cilindrataEl); specsGrid.appendChild(r); }
+        if (effEl) { resetElement(effEl); const r = document.createElement('div'); r.className = 'spec-row'; r.innerHTML = '<span>🔧 Efficienza:</span>'; r.appendChild(effEl); specsGrid.appendChild(r); }
+        if (marmittaEl) { resetElement(marmittaEl); const r = document.createElement('div'); r.className = 'spec-row'; r.innerHTML = '<span>💨 Marmitta:</span>'; r.appendChild(marmittaEl); specsGrid.appendChild(r); }
+        if (carburatoreEl) { resetElement(carburatoreEl); const r = document.createElement('div'); r.className = 'spec-row'; r.innerHTML = '<span>⚙️ Carburatore:</span>'; r.appendChild(carburatoreEl); specsGrid.appendChild(r); }
+        if (filtroEl) { resetElement(filtroEl); const r = document.createElement('div'); r.className = 'spec-row'; r.innerHTML = '<span>🌬️ Filtro aria:</span>'; r.appendChild(filtroEl); specsGrid.appendChild(r); }
+        specsCard.appendChild(specsGrid);
+        container.appendChild(specsCard);
+
+        // Tuning buttons
+        const actionsList = document.createElement('div');
+        actionsList.className = 'scooter-tuning-actions-list';
+        if (btnCarb) { resetElement(btnCarb); btnCarb.innerHTML = '<span>⚙️ Carburatore</span> <span>›</span>'; actionsList.appendChild(btnCarb); }
+        if (btnMarm) { resetElement(btnMarm); btnMarm.innerHTML = '<span>💨 Marmitta</span> <span>›</span>'; actionsList.appendChild(btnMarm); }
+        if (btnPist) { resetElement(btnPist); btnPist.innerHTML = '<span>🚀 Pistone/Cilindro</span> <span>›</span>'; actionsList.appendChild(btnPist); }
+        if (btnFilt) { resetElement(btnFilt); btnFilt.innerHTML = '<span>🌬️ Filtro dell\'aria</span> <span>›</span>'; actionsList.appendChild(btnFilt); }
+        container.appendChild(actionsList);
+
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.innerHTML = '✓ Fatto';
+            const bar = document.createElement('div'); bar.className = 'mobile-bottom-bar';
+            bar.appendChild(btnOk);
+            container.appendChild(bar);
+        }
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformGeneric(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        // Hide legacy decorative shades
+        body.querySelectorAll('.BorShade, .ws_border, .horizontal_bump, .vertical_bump, .horizontal_bump_alt, .vertical_bump_alt').forEach(el => {
+            if (!el.classList.contains('dlg_item')) el.style.display = 'none';
+        });
+
+        // Ensure all interactive controls have reset position and are touchable
+        body.querySelectorAll('.dlg_item, button, input, select, textarea, img, canvas').forEach(el => {
+            resetElement(el);
+        });
+
+        // Reset non-dlg statics and labels
+        body.querySelectorAll('.control, label').forEach(el => {
+            el.style.position = 'static';
+            el.style.left = 'auto';
+            el.style.top = 'auto';
+            el.style.width = 'auto';
+            el.style.height = 'auto';
         });
     }
 
@@ -485,11 +2119,79 @@
 
         // Fix relative image paths in templates
         html = html.replace(/src="resources\//g, 'src="../resources/');
+        html = html.replace(/class="window-body[^"]*"/g, 'class="window-body"');
 
         const win = createWindow(html, hWnd, CW_USEDEFAULT, CW_USEDEFAULT, CW_SKIPRESIZE, CW_SKIPRESIZE, null, 0, 0, parentWindowId);
-        win.classList.add('dlg-' + dialog);
+        const dialogNum = parseInt(dialog, 10);
+        console.log('[dialogBox] hWnd:', hWnd, 'dialog:', dialog, 'dialogNum:', dialogNum);
+        win.classList.add('dlg-' + dialogNum);
         setActiveWindow(hWnd);
         addMainMenu(win);
+
+        try {
+            if (dialogNum === 1) {
+                console.log('[dialogBox] transforming Dashboard for hWnd', hWnd);
+                transformDashboard(win);
+            } else if (dialogNum === 2) {
+                transformAbout(win);
+            } else if (dialogNum === 10 || dialogNum === 11) {
+                transformScuola(win);
+            } else if (dialogNum === 88) {
+                transformTabacchi(win);
+            } else if (dialogNum === 8) {
+                transformNegoziMenu(win);
+            } else if (dialogNum >= 80 && dialogNum <= 86) {
+                transformShop(win);
+            } else if (dialogNum === 7) {
+                transformScooter(win);
+            } else if (dialogNum === 73) {
+                transformTruccaScooter(win);
+            } else if (dialogNum >= 74 && dialogNum <= 79) {
+                transformScooterShowroom(win);
+            } else if (dialogNum >= 70 && dialogNum <= 72) {
+                transformScooterShop(win);
+            } else if (dialogNum === 4) {
+                transformDisco(win);
+            } else if (dialogNum === 13) {
+                transformLavoro(win);
+            } else if (dialogNum >= 390 && dialogNum <= 397) {
+                transformJobOffer(win);
+            } else if (dialogNum >= 200 && dialogNum <= 209) {
+                transformJobQuiz(win);
+            } else if (dialogNum === 210) {
+                transformCompanyList(win);
+            } else if (dialogNum >= 290 && dialogNum <= 297) {
+                transformCompanyInfo(win);
+            } else if (dialogNum === 5) {
+                transformFamiglia(win);
+            } else if (dialogNum === 6) {
+                transformCompagnia(win);
+            } else if (dialogNum === 9 || dialogNum === 190) {
+                transformTipa(win);
+            } else if (dialogNum === 91 || dialogNum === 191) {
+                transformCercaTipa(win);
+            } else if (dialogNum === 92 || dialogNum === 192) {
+                transformDueDonne(win);
+            } else if (dialogNum === 95) {
+                transformDueDiPicche(win);
+            } else if (dialogNum === 96) {
+                transformEventBeatdown(win);
+            } else if (dialogNum >= 93 && dialogNum <= 94) {
+                transformDate(win);
+            } else if (dialogNum === 89) {
+                transformPalestra(win);
+            } else if (dialogNum >= 120 && dialogNum <= 123) {
+                transformCellulare(win);
+            } else if ((dialogNum >= 100 && dialogNum <= 107) || dialogNum === 110) {
+                transformEventBeatdown(win);
+            } else if (dialogNum === 12) {
+                transformSplash(win);
+            } else {
+                transformGeneric(win);
+            }
+        } catch (err) {
+            console.error('[dialogBox] Error transforming dialog ' + dialogNum + ':', err);
+        }
 
         win.querySelectorAll('.dlg_item').forEach(element => {
             const hMenu = Number(element.className.match(/\d+/));
@@ -513,18 +2215,15 @@
         if (wall) wall.remove();
         if (win) win.remove();
 
-        // Always activate the top visible remaining window
-        const remainingWindows = Array.from(document.querySelectorAll('#screen .window')).filter(w => w.style.display !== 'none');
-        console.log('[destroyWindow] remaining windows count:', remainingWindows.length, remainingWindows.map(w => w.id));
-        if (remainingWindows.length > 0) {
-            const topWin = remainingWindows[remainingWindows.length - 1];
-            const match = topWin.id.match(/\d+/);
-            if (match) {
-                setActiveWindow(Number(match[0]));
-                centerWindow(topWin);
+        if (_activeWindowHwnd === hWnd) {
+            const remainingWindows = Array.from(document.querySelectorAll('.window:not(.messagebox)'));
+            if (remainingWindows.length > 0) {
+                const topWin = remainingWindows[remainingWindows.length - 1];
+                const m = topWin.id.match(/\d+/);
+                if (m) {
+                    setActiveWindow(Number(m[0]));
+                }
             }
-        } else {
-            _activeWindowHwnd = null;
         }
     }
 
@@ -581,11 +2280,11 @@
         if (target.tagName === 'LABEL' && target.htmlFor) {
             const input = document.getElementById(target.htmlFor);
             if (input) target = input;
-        } else if (!target.className.match(/\d+/) && target.closest('.dlg_item')) {
+        } else if (target.closest('.dlg_item')) {
             target = target.closest('.dlg_item');
         }
 
-        const match = target.className ? target.className.match(/\d+/) : null;
+        const match = target.className && typeof target.className === 'string' ? target.className.match(/\d+/) : null;
 
         // Determine target window handle: prioritize the window containing the clicked element
         let targetHwnd = _activeWindowHwnd;

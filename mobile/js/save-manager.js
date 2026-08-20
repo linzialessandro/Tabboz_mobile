@@ -1,6 +1,9 @@
 /**
  * Tabboz Simulator Mobile - Save Manager
- * Manages local save slots, export/import (.tabboz JSON), auto-save sync, and game reset.
+ * Copyright (c) 1997-2001 Andrea Bonomi, Emanuele Caccialanza
+ * Distributed under the terms of the GNU General Public License v3.0.
+ *
+ * Manages local save slots, export/import (.tabboz JSON), and game reset.
  */
 
 const SaveManager = (() => {
