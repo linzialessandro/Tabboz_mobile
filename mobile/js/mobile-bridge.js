@@ -540,6 +540,14 @@
 
     function resetElement(el) {
         if (!el) return;
+        el.style.position = 'static';
+        el.style.left = 'auto';
+        el.style.top = 'auto';
+        el.style.right = 'auto';
+        el.style.bottom = 'auto';
+        el.style.width = 'auto';
+        el.style.height = 'auto';
+        el.style.margin = '0';
         el.classList.add('mobile-reset');
     }
 
