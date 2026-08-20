@@ -1163,14 +1163,22 @@ button:active, input[type="button"]:active {
 .palestra-sub-card {
     background: #ffffff !important;
     border-radius: 12px !important;
-    padding: 12px 8px !important;
+    padding: 14px 8px !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    gap: 6px !important;
+    gap: 8px !important;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
     border: 1px solid #e2e8f0 !important;
     position: relative !important;
+    cursor: pointer !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+.palestra-sub-card:active {
+    transform: scale(0.96) !important;
 }
 
 .palestra-sub-card.featured {
@@ -1191,24 +1199,25 @@ button:active, input[type="button"]:active {
 }
 
 .sub-duration {
-    font-size: 13px !important;
+    font-size: 14px !important;
     font-weight: 800 !important;
     color: #1f2937 !important;
 }
 
 .sub-icon {
-    font-size: 22px !important;
+    font-size: 24px !important;
 }
 
 .sub-price,
-.palestra-sub-card .dlg_item {
-    font-size: 12px !important;
+.palestra-sub-card div.dlg_item,
+.palestra-sub-card span.dlg_item {
+    font-size: 13px !important;
     font-weight: 800 !important;
     color: #008080 !important;
     min-height: 18px !important;
     border: none !important;
     box-shadow: none !important;
-    margin: 0 !important;
+    margin: 2px 0 !important;
     padding: 0 !important;
     background: transparent !important;
     text-align: center !important;
@@ -1218,12 +1227,37 @@ button:active, input[type="button"]:active {
 
 .sub-btn {
     width: 100% !important;
-    height: 38px !important;
-    min-height: 38px !important;
-    padding: 0 !important;
-    font-size: 12px !important;
-    font-weight: 700 !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 8px !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
     border-radius: 8px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-top: 4px !important;
+    border: 2px solid #008080 !important;
+    background: #ffffff !important;
+    color: #004d4d !important;
+    transition: all 0.15s ease !important;
+}
+
+.sub-btn:active,
+.palestra-sub-card:active .sub-btn {
+    background: #008080 !important;
+    color: #ffffff !important;
+}
+
+.palestra-sub-card.featured .sub-btn {
+    background: #008080 !important;
+    color: #ffffff !important;
+}
+
+.palestra-sub-card.featured .sub-btn:active,
+.palestra-sub-card.featured:active .sub-btn {
+    background: #004d4d !important;
 }
 
 .palestra-lampada-card {

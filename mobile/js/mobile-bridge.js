@@ -1643,6 +1643,13 @@
             subtitle.innerText = 'Richiede un abbonamento attivo. Aumenta la tua Figosità!';
             workoutCard.appendChild(subtitle);
 
+            workoutCard.style.cursor = 'pointer';
+            workoutCard.addEventListener('click', (e) => {
+                if (e.target !== btnWorkout) {
+                    btnWorkout.click();
+                }
+            });
+
             workoutSection.appendChild(workoutCard);
             container.appendChild(workoutSection);
         }
@@ -1658,7 +1665,7 @@
         const abbGrid = document.createElement('div');
         abbGrid.className = 'palestra-sub-grid';
 
-        // 1 Mese
+        // 1 Mese (Control 115)
         if (btnMese) {
             resetElement(btnMese);
             const card = document.createElement('div');
@@ -1678,10 +1685,17 @@
             btnMese.innerHTML = 'Abbonati';
             attachButtonHandler(btnMese, 115, hWnd);
             card.appendChild(btnMese);
+
+            card.addEventListener('click', (e) => {
+                if (e.target !== btnMese) {
+                    btnMese.click();
+                }
+            });
+
             abbGrid.appendChild(card);
         }
 
-        // 6 Mesi
+        // 6 Mesi (Control 116)
         if (btnSeiMesi) {
             resetElement(btnSeiMesi);
             const card = document.createElement('div');
@@ -1702,10 +1716,17 @@
             btnSeiMesi.innerHTML = 'Abbonati';
             attachButtonHandler(btnSeiMesi, 116, hWnd);
             card.appendChild(btnSeiMesi);
+
+            card.addEventListener('click', (e) => {
+                if (e.target !== btnSeiMesi) {
+                    btnSeiMesi.click();
+                }
+            });
+
             abbGrid.appendChild(card);
         }
 
-        // 1 Anno
+        // 1 Anno (Control 117)
         if (btnAnno) {
             resetElement(btnAnno);
             const card = document.createElement('div');
@@ -1725,13 +1746,20 @@
             btnAnno.innerHTML = 'Abbonati';
             attachButtonHandler(btnAnno, 117, hWnd);
             card.appendChild(btnAnno);
+
+            card.addEventListener('click', (e) => {
+                if (e.target !== btnAnno) {
+                    btnAnno.click();
+                }
+            });
+
             abbGrid.appendChild(card);
         }
 
         abbSection.appendChild(abbGrid);
         container.appendChild(abbSection);
 
-        // 5. Lampada UVA Section
+        // 5. Lampada UVA Section (Control 111)
         if (btnLampada) {
             resetElement(btnLampada);
             const lampSection = document.createElement('div');
@@ -1744,6 +1772,7 @@
 
             const lampCard = document.createElement('div');
             lampCard.className = 'palestra-lampada-card';
+            lampCard.style.cursor = 'pointer';
 
             const lampInfo = document.createElement('div');
             lampInfo.className = 'lampada-info';
@@ -1766,11 +1795,17 @@
             attachButtonHandler(btnLampada, 111, hWnd);
             lampCard.appendChild(btnLampada);
 
+            lampCard.addEventListener('click', (e) => {
+                if (e.target !== btnLampada) {
+                    btnLampada.click();
+                }
+            });
+
             lampSection.appendChild(lampCard);
             container.appendChild(lampSection);
         }
 
-        // 6. Bottom Navigation Bar
+        // 6. Bottom Navigation Bar (Control 1)
         if (btnOk) {
             resetElement(btnOk);
             btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
