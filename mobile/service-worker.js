@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tabboz-mobile-v12';
+const CACHE_NAME = 'tabboz-mobile-v13';
 
 self.addEventListener('install', event => {
   self.skipWaiting();

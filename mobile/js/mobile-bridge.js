@@ -1629,10 +1629,21 @@
         startBtn.innerHTML = '⚡ TOCCA PER GIOCARE ⚡';
         container.appendChild(startBtn);
 
-        // Clicking anywhere on splash container or window dismisses splash and enters game
+        let dismissed = false;
+        function dismissSplash(e) {
+            if (dismissed) return;
+            dismissed = true;
+            if (typeof _PostMessage === 'function') {
+                _PostMessage(_activeWindowHwnd, WM_COMMAND, 202, 0);
+            }
+            stopWaiting();
+        }
+
+        startBtn.addEventListener('click', dismissSplash);
+        if (img) img.addEventListener('click', dismissSplash);
         container.addEventListener('click', (e) => {
-            if (img && e.target !== img) {
-                img.click();
+            if (e.target !== img && e.target !== startBtn) {
+                dismissSplash(e);
             }
         });
 
@@ -2683,6 +2694,14 @@
         const dialogNum = parseInt(dialog, 10);
         console.log('[dialogBox] hWnd:', hWnd, 'dialog:', dialog, 'dialogNum:', dialogNum);
         win.classList.add('dlg-' + dialogNum);
+
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) {
+            loadingScreen.style.opacity = '0';
+            loadingScreen.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => { if (loadingScreen.parentNode) loadingScreen.remove(); }, 300);
+        }
+
         setActiveWindow(hWnd);
         addMainMenu(win);
 
