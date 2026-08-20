@@ -477,6 +477,26 @@
         win.style.transform = 'none';
     }
 
+    function setIcon(hWnd, icon) {}
+    function moveWindow(hWnd, X, Y, nWidth, nHeight) {}
+    function getSystemMetrics(nIndex) {
+        const screen = document.getElementById("screen");
+        if (nIndex === SM_CXSCREEN) return screen ? screen.clientWidth : window.innerWidth;
+        if (nIndex === SM_CYSCREEN) return screen ? screen.clientHeight : window.innerHeight;
+        return 0;
+    }
+    function getWindowRectDimension(hWnd, dimension) {
+        const win = document.querySelector("#win" + hWnd);
+        if (!win) return 0;
+        const rect = win.getBoundingClientRect();
+        switch (dimension) {
+            case 0: return Math.round(rect.left);
+            case 1: return Math.round(rect.top);
+            case 2: return Math.round(rect.right);
+            case 3: return Math.round(rect.bottom);
+            default: return 0;
+        }
+    }
     function setWindowInitialPosition(win, x, y, width, height, parentWindowId) {
         centerWindow(win);
     }
@@ -513,22 +533,26 @@
         else if (uType & 0x00000030) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/101.png`;
         else if (uType & 0x00000040) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/104.png`;
 
+        const btn1 = c.querySelector('.control1');
+        const btn2 = c.querySelector('.control2');
+        const btn6 = c.querySelector('.control6');
+        const btn7 = c.querySelector('.control7');
+
         if (uType & 0x00000001) { // MB_OKCANCEL
-            c.querySelector('.control1').style.display = 'inline-block';
-            c.querySelector('.control2').style.display = 'inline-block';
-            c.querySelector('.control6').style.display = 'none';
-            c.querySelector('.control7').style.display = 'none';
+            if (btn1) { btn1.style.display = 'inline-block'; attachButtonHandler(btn1, 1, hWnd); }
+            if (btn2) { btn2.style.display = 'inline-block'; attachButtonHandler(btn2, 2, hWnd); }
+            if (btn6) btn6.style.display = 'none';
+            if (btn7) btn7.style.display = 'none';
         } else if (uType & 0x00000004) { // MB_YESNO
-            c.querySelector('.control1').style.display = 'none';
-            c.querySelector('.control2').style.display = 'none';
-            c.querySelector('.control6').style.display = 'inline-block';
-            c.querySelector('.control7').style.display = 'inline-block';
+            if (btn1) btn1.style.display = 'none';
+            if (btn2) btn2.style.display = 'none';
+            if (btn6) { btn6.style.display = 'inline-block'; attachButtonHandler(btn6, 6, hWnd); }
+            if (btn7) { btn7.style.display = 'inline-block'; attachButtonHandler(btn7, 7, hWnd); }
         } else { // MB_OK
-            c.querySelector('.control1').innerText = 'OK';
-            c.querySelector('.control1').style.display = 'inline-block';
-            c.querySelector('.control2').style.display = 'none';
-            c.querySelector('.control6').style.display = 'none';
-            c.querySelector('.control7').style.display = 'none';
+            if (btn1) { btn1.innerText = 'OK'; btn1.style.display = 'inline-block'; attachButtonHandler(btn1, 1, hWnd); }
+            if (btn2) btn2.style.display = 'none';
+            if (btn6) btn6.style.display = 'none';
+            if (btn7) btn7.style.display = 'none';
         }
 
         const rawText = typeof lpText === 'number' ? UTF8ToString(lpText) : lpText;
@@ -571,7 +595,7 @@
         });
     }
 
-    function transformDashboard(win) {
+    function transformDashboard(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
@@ -665,19 +689,20 @@
 
         const navGrid = document.createElement('div');
         navGrid.className = 'dashboard-nav-grid';
-        if (btnScooter) { resetElement(btnScooter); btnScooter.innerHTML = '<span>🛵</span> <span>Scooter</span>'; navGrid.appendChild(btnScooter); }
-        if (btnNegozi) { resetElement(btnNegozi); btnNegozi.innerHTML = '<span>🏬</span> <span>Negozi</span>'; navGrid.appendChild(btnNegozi); }
-        if (btnDisco) { resetElement(btnDisco); btnDisco.innerHTML = '<span>🪩</span> <span>Disco</span>'; navGrid.appendChild(btnDisco); }
-        if (btnScuola) { resetElement(btnScuola); btnScuola.innerHTML = '<span>🎓</span> <span>Scuola</span>'; navGrid.appendChild(btnScuola); }
-        if (btnLavoro) { resetElement(btnLavoro); btnLavoro.innerHTML = '<span>💼</span> <span>Lavoro</span>'; navGrid.appendChild(btnLavoro); }
-        if (btnTipa) { resetElement(btnTipa); btnTipa.innerHTML = '<span>💋</span> <span>Tipa</span>'; navGrid.appendChild(btnTipa); }
-        if (btnCompagnia) { resetElement(btnCompagnia); btnCompagnia.innerHTML = '<span>👥</span> <span>Compagnia</span>'; navGrid.appendChild(btnCompagnia); }
-        if (btnFamiglia) { resetElement(btnFamiglia); btnFamiglia.innerHTML = '<span>🏠</span> <span>Famiglia</span>'; navGrid.appendChild(btnFamiglia); }
+        if (btnScooter) { resetElement(btnScooter); btnScooter.innerHTML = '<span>🛵</span> <span>Scooter</span>'; attachButtonHandler(btnScooter, 130, hWnd); navGrid.appendChild(btnScooter); }
+        if (btnNegozi) { resetElement(btnNegozi); btnNegozi.innerHTML = '<span>🏬</span> <span>Negozi</span>'; attachButtonHandler(btnNegozi, 131, hWnd); navGrid.appendChild(btnNegozi); }
+        if (btnDisco) { resetElement(btnDisco); btnDisco.innerHTML = '<span>🪩</span> <span>Disco</span>'; attachButtonHandler(btnDisco, 132, hWnd); navGrid.appendChild(btnDisco); }
+        if (btnScuola) { resetElement(btnScuola); btnScuola.innerHTML = '<span>🎓</span> <span>Scuola</span>'; attachButtonHandler(btnScuola, 136, hWnd); navGrid.appendChild(btnScuola); }
+        if (btnLavoro) { resetElement(btnLavoro); btnLavoro.innerHTML = '<span>💼</span> <span>Lavoro</span>'; attachButtonHandler(btnLavoro, 137, hWnd); navGrid.appendChild(btnLavoro); }
+        if (btnTipa) { resetElement(btnTipa); btnTipa.innerHTML = '<span>💋</span> <span>Tipa</span>'; attachButtonHandler(btnTipa, 133, hWnd); navGrid.appendChild(btnTipa); }
+        if (btnCompagnia) { resetElement(btnCompagnia); btnCompagnia.innerHTML = '<span>👥</span> <span>Compagnia</span>'; attachButtonHandler(btnCompagnia, 134, hWnd); navGrid.appendChild(btnCompagnia); }
+        if (btnFamiglia) { resetElement(btnFamiglia); btnFamiglia.innerHTML = '<span>🏠</span> <span>Famiglia</span>'; attachButtonHandler(btnFamiglia, 135, hWnd); navGrid.appendChild(btnFamiglia); }
         container.appendChild(navGrid);
 
         if (btnAbout) {
             resetElement(btnAbout);
             btnAbout.innerHTML = 'ℹ️ Info su Tabboz Simulator';
+            attachButtonHandler(btnAbout, 120, hWnd);
             container.appendChild(btnAbout);
         }
 
@@ -685,7 +710,7 @@
         body.appendChild(container);
     }
 
-    function transformAbout(win) {
+    function transformAbout(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
@@ -731,20 +756,15 @@
             resetElement(btnNorme);
             btnNorme.className = 'dlg_item control113 mobile-btn secondary';
             btnNorme.innerHTML = '📜 Norme di utilizzo';
-            btnNorme.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (typeof _PostMessage === 'function') {
-                    _PostMessage(_activeWindowHwnd, WM_COMMAND, 113, 0);
-                }
-                stopWaiting();
-            });
+            attachButtonHandler(btnNorme, 113, hWnd);
             container.appendChild(btnNorme);
         }
 
         if (btnOk) {
             resetElement(btnOk);
             btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
-            btnOk.innerHTML = '✓ Chiudi';
+            btnOk.innerHTML = '✓ Torna alla Dashboard';
+            attachButtonHandler(btnOk, 1, hWnd);
             const bar = document.createElement('div');
             bar.className = 'mobile-bottom-bar';
             bar.appendChild(btnOk);
@@ -755,7 +775,7 @@
         body.appendChild(container);
     }
 
-    function transformScuola(win) {
+    function transformScuola(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
@@ -767,7 +787,7 @@
         const btnStudia = body.querySelector('.control103');
         const btnMinaccia = body.querySelector('.control102');
         const btnCorrompi = body.querySelector('.control101');
-        const btnOk = body.querySelector('.control1');
+        const btnOk = getButtonOk(body) || body.querySelector('.control1');
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-scuola-view';
@@ -833,8 +853,9 @@
             card.onclick = () => {
                 if (radio) {
                     radio.checked = true;
-                    if (typeof _PostMessage === 'function') {
-                        _PostMessage(_activeWindowHwnd, WM_COMMAND, radioId, 0);
+                    const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : _activeWindowHwnd;
+                    if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
+                        _PostMessage(targetHwnd, WM_COMMAND, radioId, 0);
                         stopWaiting();
                     }
                     subjectList.querySelectorAll('.scuola-subject-card').forEach(c => c.classList.remove('selected'));
@@ -852,22 +873,27 @@
         actionsDrawer.className = 'mobile-actions-drawer';
         if (btnStudia) {
             resetElement(btnStudia);
-            btnStudia.classList.add('btn-scuola-action', 'btn-studia');
+            btnStudia.className = 'dlg_item control103 mobile-btn primary btn-scuola-action btn-studia';
+            attachButtonHandler(btnStudia, 103, hWnd);
             actionsDrawer.appendChild(btnStudia);
         }
         if (btnMinaccia) {
             resetElement(btnMinaccia);
-            btnMinaccia.classList.add('btn-scuola-action', 'btn-minaccia');
+            btnMinaccia.className = 'dlg_item control102 mobile-btn primary btn-scuola-action btn-minaccia';
+            attachButtonHandler(btnMinaccia, 102, hWnd);
             actionsDrawer.appendChild(btnMinaccia);
         }
         if (btnCorrompi) {
             resetElement(btnCorrompi);
-            btnCorrompi.classList.add('btn-scuola-action', 'btn-corrompi');
+            btnCorrompi.className = 'dlg_item control101 mobile-btn primary btn-scuola-action btn-corrompi';
+            attachButtonHandler(btnCorrompi, 101, hWnd);
             actionsDrawer.appendChild(btnCorrompi);
         }
         if (btnOk) {
             resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
             btnOk.innerHTML = '✓ Torna a Casa';
+            attachButtonHandler(btnOk, 1, hWnd);
             actionsDrawer.appendChild(btnOk);
         }
         container.appendChild(actionsDrawer);
@@ -876,15 +902,15 @@
         body.appendChild(container);
     }
 
-    function transformTabacchi(win) {
+    function transformTabacchi(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
         const soldiEl = body.querySelector('.control104') || body.querySelector('.control150');
         const sizzeEl = body.querySelector('.control105');
         const msgEl = body.querySelector('.control106');
-        const btnOk = body.querySelector('.control1');
-        const btnCancel = body.querySelector('.control2');
+        const btnOk = getButtonOk(body) || body.querySelector('.control1');
+        const btnCancel = getButtonCancel(body) || body.querySelector('.control2');
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-tabacchi-view';
@@ -908,9 +934,22 @@
         const packs = body.querySelectorAll('img.dlg_item');
         packs.forEach(pack => {
             resetElement(pack);
+            const m = pack.className.match(/control(\d+)/) || pack.className.match(/\d+/);
+            const controlId = m ? Number(m[1] || m[0]) : null;
             const packCard = document.createElement('div');
             packCard.className = 'pack-card';
             packCard.appendChild(pack);
+            if (controlId !== null) {
+                packCard.onclick = () => {
+                    packsGrid.querySelectorAll('.pack-card').forEach(c => c.classList.remove('selected'));
+                    packCard.classList.add('selected');
+                    const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : _activeWindowHwnd;
+                    if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
+                        _PostMessage(targetHwnd, WM_COMMAND, controlId, 0);
+                        stopWaiting();
+                    }
+                };
+            }
             packsGrid.appendChild(packCard);
         });
         container.appendChild(packsGrid);
@@ -918,20 +957,32 @@
         // Sticky Bottom Actions
         const actionsBar = document.createElement('div');
         actionsBar.className = 'mobile-bottom-bar';
-        if (btnCancel) { resetElement(btnCancel); btnCancel.innerHTML = '✕ Esci'; actionsBar.appendChild(btnCancel); }
-        if (btnOk) { resetElement(btnOk); btnOk.innerHTML = '✓ Compra'; actionsBar.appendChild(btnOk); }
+        if (btnCancel) {
+            resetElement(btnCancel);
+            btnCancel.className = 'dlg_item control2 button_cancel mobile-btn secondary';
+            btnCancel.innerHTML = '✕ Esci';
+            attachButtonHandler(btnCancel, 2, hWnd);
+            actionsBar.appendChild(btnCancel);
+        }
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
+            btnOk.innerHTML = '✓ Compra';
+            attachButtonHandler(btnOk, 1, hWnd);
+            actionsBar.appendChild(btnOk);
+        }
         container.appendChild(actionsBar);
 
         body.innerHTML = '';
         body.appendChild(container);
     }
 
-    function transformNegoziMenu(win) {
+    function transformNegoziMenu(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
         const soldiEl = body.querySelector('.control120') || body.querySelector('.control104') || body.querySelector('.control150');
-        const btnOk = body.querySelector('.control1');
+        const btnOk = getButtonOk(body) || body.querySelector('.control1');
 
         const buttons = Array.from(body.querySelectorAll('button.dlg_item')).filter(b => !b.classList.contains('control1'));
 
@@ -964,16 +1015,23 @@
 
         buttons.forEach(btn => {
             resetElement(btn);
+            const m = btn.className.match(/control(\d+)/) || btn.className.match(/\d+/);
+            const controlId = m ? Number(m[1] || m[0]) : null;
             const text = btn.innerText.trim();
             const icon = icons[text] || '🛍️';
             btn.innerHTML = `<span class="btn-icon">${icon}</span> <span class="btn-text">${text}</span> <span class="btn-chevron">›</span>`;
+            if (controlId !== null) {
+                attachButtonHandler(btn, controlId, hWnd);
+            }
             list.appendChild(btn);
         });
         container.appendChild(list);
 
         if (btnOk) {
             resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
             btnOk.innerHTML = '✓ Torna alla Dashboard';
+            attachButtonHandler(btnOk, 1, hWnd);
             const bar = document.createElement('div');
             bar.className = 'mobile-bottom-bar';
             bar.appendChild(btnOk);
@@ -984,7 +1042,7 @@
         body.appendChild(container);
     }
 
-    function transformScooter(win) {
+    function transformScooter(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
@@ -1000,7 +1058,7 @@
         const btnRipara = body.querySelector('.control103');
         const btnParcheggia = body.querySelector('.control105') || body.querySelector('.control109');
         const btnBenza = body.querySelector('.control106') || body.querySelector('.control110');
-        const btnOk = body.querySelector('.control1');
+        const btnOk = getButtonOk(body) || body.querySelector('.control1');
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-scooter-view';
@@ -1019,16 +1077,18 @@
         // Actions List
         const actionsList = document.createElement('div');
         actionsList.className = 'scooter-actions-list';
-        if (btnConcess) { resetElement(btnConcess); btnConcess.innerHTML = '🏬 Concessionario'; actionsList.appendChild(btnConcess); }
-        if (btnTrucca) { resetElement(btnTrucca); btnTrucca.innerHTML = '⚡ Trucca Scooter'; actionsList.appendChild(btnTrucca); }
-        if (btnRipara) { resetElement(btnRipara); btnRipara.innerHTML = '🔧 Ripara Scooter'; actionsList.appendChild(btnRipara); }
-        if (btnBenza) { resetElement(btnBenza); btnBenza.innerHTML = '⛽ Fai Benza'; actionsList.appendChild(btnBenza); }
-        if (btnParcheggia) { resetElement(btnParcheggia); btnParcheggia.innerHTML = '🅿️ Parcheggia/Usa Scooter'; actionsList.appendChild(btnParcheggia); }
+        if (btnConcess) { resetElement(btnConcess); btnConcess.className = 'dlg_item control101 mobile-btn primary'; btnConcess.innerHTML = '🏬 Concessionario'; attachButtonHandler(btnConcess, 101, hWnd); actionsList.appendChild(btnConcess); }
+        if (btnTrucca) { resetElement(btnTrucca); btnTrucca.className = 'dlg_item control102 mobile-btn primary'; btnTrucca.innerHTML = '⚡ Trucca Scooter'; attachButtonHandler(btnTrucca, 102, hWnd); actionsList.appendChild(btnTrucca); }
+        if (btnRipara) { resetElement(btnRipara); btnRipara.className = 'dlg_item control103 mobile-btn primary'; btnRipara.innerHTML = '🔧 Ripara Scooter'; attachButtonHandler(btnRipara, 103, hWnd); actionsList.appendChild(btnRipara); }
+        if (btnBenza) { resetElement(btnBenza); btnBenza.className = 'dlg_item control106 mobile-btn primary'; btnBenza.innerHTML = '⛽ Fai Benza'; attachButtonHandler(btnBenza, 106, hWnd); actionsList.appendChild(btnBenza); }
+        if (btnParcheggia) { resetElement(btnParcheggia); btnParcheggia.className = 'dlg_item control105 mobile-btn primary'; btnParcheggia.innerHTML = '🅿️ Parcheggia/Usa Scooter'; attachButtonHandler(btnParcheggia, 105, hWnd); actionsList.appendChild(btnParcheggia); }
         container.appendChild(actionsList);
 
         if (btnOk) {
             resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
             btnOk.innerHTML = '✓ Torna alla Dashboard';
+            attachButtonHandler(btnOk, 1, hWnd);
             const bar = document.createElement('div');
             bar.className = 'mobile-bottom-bar';
             bar.appendChild(btnOk);
@@ -1039,14 +1099,14 @@
         body.appendChild(container);
     }
 
-    function transformShop(win) {
+    function transformShop(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
         const soldiEl = body.querySelector('.control120') || body.querySelector('.control104');
         const figoEl = body.querySelector('.control121') || body.querySelector('.control105');
-        const btnOk = body.querySelector('.control1');
-        const btnCancel = body.querySelector('.control2');
+        const btnOk = getButtonOk(body) || body.querySelector('.control1');
+        const btnCancel = getButtonCancel(body) || body.querySelector('.control2');
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-shop-view';
@@ -1058,18 +1118,45 @@
         if (figoEl) { resetElement(figoEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.innerHTML = '<small>⭐ Figosità</small>'; c.appendChild(figoEl); statsBar.appendChild(c); }
         container.appendChild(statsBar);
 
-        // 3 Products Cards
+        // Find all radio inputs in this shop dialog
+        const radios = Array.from(body.querySelectorAll('input[type="radio"], input.bwcc, input[data-class="BorRadio"]'))
+            .map(r => {
+                const match = r.className.match(/control(\d+)/) || r.className.match(/\d+/);
+                const id = match ? parseInt(match[1] || match[0], 10) : 0;
+                return { el: r, id };
+            })
+            .sort((a, b) => a.id - b.id);
+
+        // Find all shop item images in this shop dialog
+        const imgs = Array.from(body.querySelectorAll('img.dlg_item, img[data-class="BorBtn"], img.ws_border'))
+            .filter(img => !img.src.includes('SCOOTER.gif') && !img.src.includes('ZARROSIM.gif'))
+            .map(img => {
+                const match = img.className.match(/control(\d+)/) || img.className.match(/\d+/);
+                const id = match ? parseInt(match[1] || match[0], 10) : 0;
+                return { el: img, id };
+            })
+            .sort((a, b) => a.id - b.id);
+
+        // Find all description statics (excluding stats labels)
+        const statics = Array.from(body.querySelectorAll('.control[data-class="STATIC"], .control[data-class="BorStatic"], .dlg_item[data-class="STATIC"], div.ss_center'))
+            .filter(el => !el.classList.contains('control120') && !el.classList.contains('control121') && !el.classList.contains('control104') && !el.classList.contains('control105') && !el.innerText.includes('Figosita') && !el.innerText.includes('Soldi'))
+            .map(st => {
+                const top = parseInt(st.style.top) || 0;
+                const left = parseInt(st.style.left) || 0;
+                return { el: st, order: top * 1000 + left };
+            })
+            .sort((a, b) => a.order - b.order);
+
         const productsList = document.createElement('div');
         productsList.className = 'shop-products-list';
 
-        const radios = [body.querySelector('.control101'), body.querySelector('.control102'), body.querySelector('.control103')];
-        const imgs = [body.querySelector('.control501'), body.querySelector('.control502'), body.querySelector('.control503')];
-        const statics = Array.from(body.querySelectorAll('.control[data-class="STATIC"], .dlg_item[data-class="STATIC"]')).filter(el => !el.classList.contains('control120') && !el.classList.contains('control121') && !el.classList.contains('control104') && !el.classList.contains('control105'));
-
-        for (let i = 0; i < 3; i++) {
-            const radio = radios[i];
-            const img = imgs[i];
-            const desc = statics[i];
+        const itemCount = radios.length;
+        for (let i = 0; i < itemCount; i++) {
+            const radioObj = radios[i];
+            const radio = radioObj.el;
+            const radioId = radioObj.id;
+            const img = imgs[i] ? imgs[i].el : null;
+            const desc = statics[i] ? statics[i].el : null;
 
             const card = document.createElement('div');
             card.className = 'shop-product-card';
@@ -1082,21 +1169,20 @@
             const info = document.createElement('div');
             info.className = 'product-info';
 
-            if (radio) {
-                resetElement(radio);
-                const radioId = 101 + i;
-                radio.id = `shop_radio_${radioId}`;
-                radio.name = 'bor_radio_shop';
-                const row = document.createElement('div');
-                row.className = 'product-radio-row';
-                row.appendChild(radio);
+            resetElement(radio);
+            radio.id = `shop_radio_${radioId}`;
+            radio.name = 'bor_radio_shop';
+            const row = document.createElement('div');
+            row.className = 'product-radio-row';
+            row.appendChild(radio);
 
-                const label = document.createElement('label');
-                label.htmlFor = `shop_radio_${radioId}`;
-                label.innerText = radio.parentElement?.querySelector('label')?.innerText || `Opzione ${i + 1}`;
-                row.appendChild(label);
-                info.appendChild(row);
-            }
+            const label = document.createElement('label');
+            label.htmlFor = `shop_radio_${radioId}`;
+            label.className = 'product-price-label';
+            // Price is set by C in WM_INITDIALOG via SetDlgItemText
+            label.innerText = radio.parentElement?.querySelector('label')?.innerText || '';
+            row.appendChild(label);
+            info.appendChild(row);
 
             if (desc) {
                 resetElement(desc);
@@ -1107,18 +1193,20 @@
             card.appendChild(info);
 
             card.onclick = () => {
-                if (radio) {
-                    radio.checked = true;
-                    if (typeof _PostMessage === 'function') {
-                        _PostMessage(_activeWindowHwnd, WM_COMMAND, 101 + i, 0);
-                        stopWaiting();
-                    }
-                    productsList.querySelectorAll('.shop-product-card').forEach(c => c.classList.remove('selected'));
-                    card.classList.add('selected');
+                radio.checked = true;
+                const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : _activeWindowHwnd;
+                if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
+                    _PostMessage(targetHwnd, WM_COMMAND, radioId, 0);
+                    stopWaiting();
                 }
+                productsList.querySelectorAll('.shop-product-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
             };
 
-            if (i === 0 && radio) { radio.checked = true; card.classList.add('selected'); }
+            if (i === 0) {
+                radio.checked = true;
+                card.classList.add('selected');
+            }
             productsList.appendChild(card);
         }
         container.appendChild(productsList);
@@ -1126,22 +1214,34 @@
         // Sticky Bottom Actions Bar
         const actionsBar = document.createElement('div');
         actionsBar.className = 'mobile-bottom-bar';
-        if (btnCancel) { resetElement(btnCancel); btnCancel.innerHTML = '✕ Annulla'; actionsBar.appendChild(btnCancel); }
-        if (btnOk) { resetElement(btnOk); btnOk.innerHTML = '✓ Compra'; actionsBar.appendChild(btnOk); }
+        if (btnCancel) {
+            resetElement(btnCancel);
+            btnCancel.className = 'dlg_item control2 button_cancel mobile-btn secondary';
+            btnCancel.innerHTML = '✕ Annulla';
+            attachButtonHandler(btnCancel, 2, hWnd);
+            actionsBar.appendChild(btnCancel);
+        }
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
+            btnOk.innerHTML = '✓ Compra';
+            attachButtonHandler(btnOk, 1, hWnd);
+            actionsBar.appendChild(btnOk);
+        }
         container.appendChild(actionsBar);
 
         body.innerHTML = '';
         body.appendChild(container);
     }
 
-    function transformDisco(win) {
+    function transformDisco(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
         const soldiEl = body.querySelector('.control110') || body.querySelector('.control104');
         const descEl = body.querySelector('.control120');
-        const btnOk = body.querySelector('.control1');
-        const btnCancel = body.querySelector('.control2');
+        const btnOk = getButtonOk(body) || body.querySelector('.control1');
+        const btnCancel = getButtonCancel(body) || body.querySelector('.control2');
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-disco-view';
@@ -1187,8 +1287,9 @@
             card.onclick = () => {
                 if (radio) {
                     radio.checked = true;
-                    if (typeof _PostMessage === 'function') {
-                        _PostMessage(_activeWindowHwnd, WM_COMMAND, radioId, 0);
+                    const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : _activeWindowHwnd;
+                    if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
+                        _PostMessage(targetHwnd, WM_COMMAND, radioId, 0);
                         stopWaiting();
                     }
                     discosList.querySelectorAll('.disco-card').forEach(c => c.classList.remove('selected'));
@@ -1209,21 +1310,33 @@
 
         const actionsBar = document.createElement('div');
         actionsBar.className = 'mobile-bottom-bar';
-        if (btnCancel) { resetElement(btnCancel); btnCancel.innerHTML = '✕ Torna a Casa'; actionsBar.appendChild(btnCancel); }
-        if (btnOk) { resetElement(btnOk); btnOk.innerHTML = '🪩 Entra in Disco'; actionsBar.appendChild(btnOk); }
+        if (btnCancel) {
+            resetElement(btnCancel);
+            btnCancel.className = 'dlg_item control2 button_cancel mobile-btn secondary';
+            btnCancel.innerHTML = '✕ Torna a Casa';
+            attachButtonHandler(btnCancel, 2, hWnd);
+            actionsBar.appendChild(btnCancel);
+        }
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
+            btnOk.innerHTML = '🪩 Entra in Disco';
+            attachButtonHandler(btnOk, 1, hWnd);
+            actionsBar.appendChild(btnOk);
+        }
         container.appendChild(actionsBar);
 
         body.innerHTML = '';
         body.appendChild(container);
     }
 
-    function transformFamiglia(win) {
+    function transformFamiglia(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
         const soldiEl = body.querySelector('.control104');
         const paghettaEl = body.querySelector('.control105');
-        const btnOk = getButtonOk(body);
+        const btnOk = getButtonOk(body) || body.querySelector('.control1');
 
         const btn1 = body.querySelector('.control101');
         const btn2 = body.querySelector('.control102');
@@ -1240,15 +1353,16 @@
 
         const actionsList = document.createElement('div');
         actionsList.className = 'famiglia-actions-list';
-        if (btn1) { resetElement(btn1); btn1.innerHTML = '📈 Chiedi aumento paghetta'; actionsList.appendChild(btn1); }
-        if (btn2) { resetElement(btn2); btn2.innerHTML = '💸 Chiedi soldi extra'; actionsList.appendChild(btn2); }
-        if (btn3) { resetElement(btn3); btn3.innerHTML = '🤑 Papà, mi dai 100.000 lire?'; actionsList.appendChild(btn3); }
+        if (btn1) { resetElement(btn1); btn1.className = 'dlg_item control101 mobile-btn primary'; btn1.innerHTML = '📈 Chiedi aumento paghetta'; attachButtonHandler(btn1, 101, hWnd); actionsList.appendChild(btn1); }
+        if (btn2) { resetElement(btn2); btn2.className = 'dlg_item control102 mobile-btn primary'; btn2.innerHTML = '💸 Chiedi soldi extra'; attachButtonHandler(btn2, 102, hWnd); actionsList.appendChild(btn2); }
+        if (btn3) { resetElement(btn3); btn3.className = 'dlg_item control103 mobile-btn primary'; btn3.innerHTML = '🤑 Papà, mi dai 100.000 lire?'; attachButtonHandler(btn3, 103, hWnd); actionsList.appendChild(btn3); }
         container.appendChild(actionsList);
 
         if (btnOk) {
             resetElement(btnOk);
-            btnOk.className += ' button_ok';
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
             btnOk.innerHTML = '✓ Torna alla Dashboard';
+            attachButtonHandler(btnOk, 1, hWnd);
             const bar = document.createElement('div');
             bar.className = 'mobile-bottom-bar';
             bar.appendChild(btnOk);
@@ -1259,13 +1373,13 @@
         body.appendChild(container);
     }
 
-    function transformCompagnia(win) {
+    function transformCompagnia(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
         const img = body.querySelector('img.control259') || body.querySelector('canvas') || body.querySelector('img');
         const repEl = body.querySelector('.control104');
-        const btnOk = getButtonOk(body);
+        const btnOk = getButtonOk(body) || body.querySelector('.control1');
 
         const btn1 = body.querySelector('.control101');
         const btn2 = body.querySelector('.control102');
@@ -1294,15 +1408,16 @@
 
         const actionsList = document.createElement('div');
         actionsList.className = 'compagnia-actions-list';
-        if (btn1) { resetElement(btn1); btn1.innerHTML = '🛵 Gareggia con lo scooter'; actionsList.appendChild(btn1); }
-        if (btn2) { resetElement(btn2); btn2.innerHTML = '🍻 Esci con la compagnia'; actionsList.appendChild(btn2); }
-        if (btn3) { resetElement(btn3); btn3.innerHTML = '📱 Chiama la compagnia'; actionsList.appendChild(btn3); }
+        if (btn1) { resetElement(btn1); btn1.className = 'dlg_item control101 mobile-btn primary'; btn1.innerHTML = '🛵 Gareggia con lo scooter'; attachButtonHandler(btn1, 101, hWnd); actionsList.appendChild(btn1); }
+        if (btn2) { resetElement(btn2); btn2.className = 'dlg_item control102 mobile-btn primary'; btn2.innerHTML = '🍻 Esci con la compagnia'; attachButtonHandler(btn2, 102, hWnd); actionsList.appendChild(btn2); }
+        if (btn3) { resetElement(btn3); btn3.className = 'dlg_item control103 mobile-btn primary'; btn3.innerHTML = '📱 Chiama la compagnia'; attachButtonHandler(btn3, 103, hWnd); actionsList.appendChild(btn3); }
         container.appendChild(actionsList);
 
         if (btnOk) {
             resetElement(btnOk);
-            btnOk.className += ' button_ok';
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
             btnOk.innerHTML = '✓ Torna alla Dashboard';
+            attachButtonHandler(btnOk, 1, hWnd);
             const bar = document.createElement('div');
             bar.className = 'mobile-bottom-bar';
             bar.appendChild(btnOk);
@@ -1313,7 +1428,7 @@
         body.appendChild(container);
     }
 
-    function transformTipa(win) {
+    function transformTipa(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
@@ -1322,7 +1437,7 @@
         const figoEl = body.querySelector('.control106');
         const affinitaEl = body.querySelector('.control107');
         const myFigoEl = body.querySelector('.control104');
-        const btnOk = body.querySelector('.control1');
+        const btnOk = getButtonOk(body) || body.querySelector('.control1');
 
         const btnCerca = body.querySelector('.control110');
         const btnLascia = body.querySelector('.control111');
@@ -1349,15 +1464,17 @@
 
         const actionsList = document.createElement('div');
         actionsList.className = 'tipa-actions-list';
-        if (btnEsci) { resetElement(btnEsci); btnEsci.innerHTML = '🥂 Esci con la tipa'; actionsList.appendChild(btnEsci); }
-        if (btnChiama) { resetElement(btnChiama); btnChiama.innerHTML = '📞 Telefona alla tipa'; actionsList.appendChild(btnChiama); }
-        if (btnCerca) { resetElement(btnCerca); btnCerca.innerHTML = '🔍 Cerca nuova tipa'; actionsList.appendChild(btnCerca); }
-        if (btnLascia) { resetElement(btnLascia); btnLascia.innerHTML = '💔 Lascia tipa'; btnLascia.className += ' btn-danger'; actionsList.appendChild(btnLascia); }
+        if (btnEsci) { resetElement(btnEsci); btnEsci.className = 'dlg_item control113 mobile-btn primary'; btnEsci.innerHTML = '🥂 Esci con la tipa'; attachButtonHandler(btnEsci, 113, hWnd); actionsList.appendChild(btnEsci); }
+        if (btnChiama) { resetElement(btnChiama); btnChiama.className = 'dlg_item control112 mobile-btn primary'; btnChiama.innerHTML = '📞 Telefona alla tipa'; attachButtonHandler(btnChiama, 112, hWnd); actionsList.appendChild(btnChiama); }
+        if (btnCerca) { resetElement(btnCerca); btnCerca.className = 'dlg_item control110 mobile-btn primary'; btnCerca.innerHTML = '🔍 Cerca nuova tipa'; attachButtonHandler(btnCerca, 110, hWnd); actionsList.appendChild(btnCerca); }
+        if (btnLascia) { resetElement(btnLascia); btnLascia.className = 'dlg_item control111 mobile-btn danger'; btnLascia.innerHTML = '💔 Lascia tipa'; attachButtonHandler(btnLascia, 111, hWnd); actionsList.appendChild(btnLascia); }
         container.appendChild(actionsList);
 
         if (btnOk) {
             resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
             btnOk.innerHTML = '✓ Torna alla Dashboard';
+            attachButtonHandler(btnOk, 1, hWnd);
             const bar = document.createElement('div');
             bar.className = 'mobile-bottom-bar';
             bar.appendChild(btnOk);
@@ -1368,7 +1485,7 @@
         body.appendChild(container);
     }
 
-    function transformLavoro(win) {
+    function transformLavoro(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
@@ -1377,7 +1494,7 @@
         const soldiEl = body.querySelector('.control104');
         const stipendioEl = body.querySelector('.control106');
         const impegnoEl = body.querySelector('.control107');
-        const btnOk = body.querySelector('.control1');
+        const btnOk = getButtonOk(body) || body.querySelector('.control1');
 
         const btnCercaLavoro = body.querySelector('.control110');
         const btnLicenziati = body.querySelector('.control111');
@@ -1415,18 +1532,20 @@
         // Action Buttons
         const actionsList = document.createElement('div');
         actionsList.className = 'lavoro-actions-list';
-        if (btnCercaLavoro) { resetElement(btnCercaLavoro); btnCercaLavoro.innerHTML = '🔍 Cerca lavoro'; actionsList.appendChild(btnCercaLavoro); }
-        if (btnLavora) { resetElement(btnLavora); btnLavora.innerHTML = '💼 Lavora'; actionsList.appendChild(btnLavora); }
-        if (btnLeccaculo) { resetElement(btnLeccaculo); btnLeccaculo.innerHTML = '😏 Fai il leccaculo'; actionsList.appendChild(btnLeccaculo); }
-        if (btnAumento) { resetElement(btnAumento); btnAumento.innerHTML = '📈 Chiedi aumento salario'; actionsList.appendChild(btnAumento); }
-        if (btnSciopera) { resetElement(btnSciopera); btnSciopera.innerHTML = '✊ Sciopera'; actionsList.appendChild(btnSciopera); }
-        if (btnInfo) { resetElement(btnInfo); btnInfo.innerHTML = 'ℹ️ Informazioni'; actionsList.appendChild(btnInfo); }
-        if (btnLicenziati) { resetElement(btnLicenziati); btnLicenziati.innerHTML = '🚪 Licenziati'; btnLicenziati.className += ' btn-danger'; actionsList.appendChild(btnLicenziati); }
+        if (btnCercaLavoro) { resetElement(btnCercaLavoro); btnCercaLavoro.className = 'dlg_item control110 mobile-btn primary'; btnCercaLavoro.innerHTML = '🔍 Cerca lavoro'; attachButtonHandler(btnCercaLavoro, 110, hWnd); actionsList.appendChild(btnCercaLavoro); }
+        if (btnLavora) { resetElement(btnLavora); btnLavora.className = 'dlg_item control116 mobile-btn primary'; btnLavora.innerHTML = '💼 Lavora'; attachButtonHandler(btnLavora, 116, hWnd); actionsList.appendChild(btnLavora); }
+        if (btnLeccaculo) { resetElement(btnLeccaculo); btnLeccaculo.className = 'dlg_item control113 mobile-btn primary'; btnLeccaculo.innerHTML = '😏 Fai il leccaculo'; attachButtonHandler(btnLeccaculo, 113, hWnd); actionsList.appendChild(btnLeccaculo); }
+        if (btnAumento) { resetElement(btnAumento); btnAumento.className = 'dlg_item control112 mobile-btn primary'; btnAumento.innerHTML = '📈 Chiedi aumento salario'; attachButtonHandler(btnAumento, 112, hWnd); actionsList.appendChild(btnAumento); }
+        if (btnSciopera) { resetElement(btnSciopera); btnSciopera.className = 'dlg_item control115 mobile-btn primary'; btnSciopera.innerHTML = '✊ Sciopera'; attachButtonHandler(btnSciopera, 115, hWnd); actionsList.appendChild(btnSciopera); }
+        if (btnInfo) { resetElement(btnInfo); btnInfo.className = 'dlg_item control114 mobile-btn primary'; btnInfo.innerHTML = 'ℹ️ Informazioni'; attachButtonHandler(btnInfo, 114, hWnd); actionsList.appendChild(btnInfo); }
+        if (btnLicenziati) { resetElement(btnLicenziati); btnLicenziati.className = 'dlg_item control111 mobile-btn danger'; btnLicenziati.innerHTML = '🚪 Licenziati'; attachButtonHandler(btnLicenziati, 111, hWnd); actionsList.appendChild(btnLicenziati); }
         container.appendChild(actionsList);
 
         if (btnOk) {
             resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
             btnOk.innerHTML = '✓ Torna alla Dashboard';
+            attachButtonHandler(btnOk, 1, hWnd);
             const bar = document.createElement('div');
             bar.className = 'mobile-bottom-bar';
             bar.appendChild(btnOk);
@@ -1437,7 +1556,7 @@
         body.appendChild(container);
     }
 
-    function transformPalestra(win) {
+    function transformPalestra(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
@@ -1516,6 +1635,7 @@
 
             btnWorkout.className = 'dlg_item control110 mobile-btn primary palestra-workout-btn';
             btnWorkout.innerHTML = '🏋️‍♂️ VAI IN PALESTRA (Allenati)';
+            attachButtonHandler(btnWorkout, 110, hWnd);
 
             workoutCard.appendChild(btnWorkout);
             const subtitle = document.createElement('div');
@@ -1556,6 +1676,7 @@
             }
             btnMese.className = 'dlg_item control115 mobile-btn secondary sub-btn';
             btnMese.innerHTML = 'Abbonati';
+            attachButtonHandler(btnMese, 115, hWnd);
             card.appendChild(btnMese);
             abbGrid.appendChild(card);
         }
@@ -1579,6 +1700,7 @@
             }
             btnSeiMesi.className = 'dlg_item control116 mobile-btn primary sub-btn';
             btnSeiMesi.innerHTML = 'Abbonati';
+            attachButtonHandler(btnSeiMesi, 116, hWnd);
             card.appendChild(btnSeiMesi);
             abbGrid.appendChild(card);
         }
@@ -1601,6 +1723,7 @@
             }
             btnAnno.className = 'dlg_item control117 mobile-btn secondary sub-btn';
             btnAnno.innerHTML = 'Abbonati';
+            attachButtonHandler(btnAnno, 117, hWnd);
             card.appendChild(btnAnno);
             abbGrid.appendChild(card);
         }
@@ -1640,6 +1763,7 @@
 
             btnLampada.className = 'dlg_item control111 mobile-btn secondary lampada-btn';
             btnLampada.innerHTML = '☀️ Fai una Lampada';
+            attachButtonHandler(btnLampada, 111, hWnd);
             lampCard.appendChild(btnLampada);
 
             lampSection.appendChild(lampCard);
@@ -1651,6 +1775,7 @@
             resetElement(btnOk);
             btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
             btnOk.innerHTML = '✓ Torna ai Negozi';
+            attachButtonHandler(btnOk, 1, hWnd);
             const bar = document.createElement('div');
             bar.className = 'mobile-bottom-bar';
             bar.appendChild(btnOk);
@@ -1661,7 +1786,7 @@
         body.appendChild(container);
     }
 
-    function transformSplash(win) {
+    function transformSplash(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
@@ -1685,17 +1810,16 @@
         startBtn.style.cssText = 'font-size: 18px; font-weight: 800; padding: 16px 32px; border-radius: 14px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3); width: 85%; max-width: 320px; cursor: pointer;';
         startBtn.innerHTML = '⚡ TOCCA PER GIOCARE ⚡';
 
-        function handleStart(e) {
+        attachButtonHandler(startBtn, 202, hWnd);
+        container.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (typeof _PostMessage === 'function') {
-                _PostMessage(_activeWindowHwnd, WM_COMMAND, 202, 0);
+            const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : _activeWindowHwnd;
+            if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
+                _PostMessage(targetHwnd, WM_COMMAND, 202, 0);
             }
             stopWaiting();
-        }
-
-        startBtn.addEventListener('click', handleStart);
-        container.addEventListener('click', handleStart);
+        });
         container.appendChild(startBtn);
 
         body.innerHTML = '';
@@ -1990,7 +2114,7 @@
         body.appendChild(container);
     }
 
-    function transformEventBeatdown(win) {
+    function transformEventBeatdown(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
@@ -2042,6 +2166,7 @@
             resetElement(btnOk);
             btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
             btnOk.innerHTML = '✓ Continua';
+            attachButtonHandler(btnOk, 1, hWnd);
             const bar = document.createElement('div');
             bar.className = 'mobile-bottom-bar';
             bar.appendChild(btnOk);
@@ -2052,7 +2177,7 @@
         body.appendChild(container);
     }
 
-    function transformPagella(win) {
+    function transformPagella(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
@@ -2108,6 +2233,7 @@
             resetElement(btnOk);
             btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
             btnOk.innerHTML = '✓ Torna a Scuola';
+            attachButtonHandler(btnOk, 1, hWnd);
             const bar = document.createElement('div');
             bar.className = 'mobile-bottom-bar';
             bar.appendChild(btnOk);
@@ -2118,13 +2244,13 @@
         body.appendChild(container);
     }
 
-    function transformDate(win) {
+    function transformDate(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
         const img = body.querySelector('img.dlg_item') || body.querySelector('canvas') || body.querySelector('img');
-        const btnOk = body.querySelector('.control1');
-        const btnCancel = body.querySelector('.control2');
+        const btnOk = getButtonOk(body) || body.querySelector('.control1');
+        const btnCancel = getButtonCancel(body) || body.querySelector('.control2');
         const buttons = Array.from(body.querySelectorAll('button.dlg_item')).filter(b => !b.classList.contains('control1') && !b.classList.contains('control2'));
         const statics = Array.from(body.querySelectorAll('.control[data-class="STATIC"], .control[data-class="BorStatic"], .dlg_item[data-class="STATIC"]'));
 
@@ -2154,6 +2280,11 @@
             list.className = 'date-actions-list';
             buttons.forEach(btn => {
                 resetElement(btn);
+                const m = btn.className.match(/control(\d+)/) || btn.className.match(/\d+/);
+                const controlId = m ? Number(m[1] || m[0]) : null;
+                if (controlId !== null) {
+                    attachButtonHandler(btn, controlId, hWnd);
+                }
                 list.appendChild(btn);
             });
             container.appendChild(list);
@@ -2161,15 +2292,27 @@
 
         const actionsBar = document.createElement('div');
         actionsBar.className = 'mobile-bottom-bar';
-        if (btnCancel) { resetElement(btnCancel); btnCancel.innerHTML = '✕ Annulla'; actionsBar.appendChild(btnCancel); }
-        if (btnOk) { resetElement(btnOk); btnOk.innerHTML = '✓ OK'; actionsBar.appendChild(btnOk); }
+        if (btnCancel) {
+            resetElement(btnCancel);
+            btnCancel.className = 'dlg_item control2 button_cancel mobile-btn secondary';
+            btnCancel.innerHTML = '✕ Annulla';
+            attachButtonHandler(btnCancel, 2, hWnd);
+            actionsBar.appendChild(btnCancel);
+        }
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
+            btnOk.innerHTML = '✓ OK';
+            attachButtonHandler(btnOk, 1, hWnd);
+            actionsBar.appendChild(btnOk);
+        }
         if (btnCancel || btnOk) container.appendChild(actionsBar);
 
         body.innerHTML = '';
         body.appendChild(container);
     }
 
-    function transformCercaTipa(win) {
+    function transformCercaTipa(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
@@ -2201,15 +2344,27 @@
 
         const actionsBar = document.createElement('div');
         actionsBar.className = 'mobile-bottom-bar';
-        if (btnRitorno) { resetElement(btnRitorno); btnRitorno.className += ' mobile-btn secondary'; btnRitorno.innerHTML = '✕ Ritorno a casa...'; actionsBar.appendChild(btnRitorno); }
-        if (btnCiProvo) { resetElement(btnCiProvo); btnCiProvo.className += ' button_ok'; btnCiProvo.innerHTML = '💘 Ci provo !'; actionsBar.appendChild(btnCiProvo); }
+        if (btnRitorno) {
+            resetElement(btnRitorno);
+            btnRitorno.className = 'dlg_item control2 button_cancel mobile-btn secondary';
+            btnRitorno.innerHTML = '✕ Ritorno a casa...';
+            attachButtonHandler(btnRitorno, 2, hWnd);
+            actionsBar.appendChild(btnRitorno);
+        }
+        if (btnCiProvo) {
+            resetElement(btnCiProvo);
+            btnCiProvo.className = 'dlg_item control101 button_ok mobile-btn primary';
+            btnCiProvo.innerHTML = '💘 Ci provo !';
+            attachButtonHandler(btnCiProvo, 101, hWnd);
+            actionsBar.appendChild(btnCiProvo);
+        }
         container.appendChild(actionsBar);
 
         body.innerHTML = '';
         body.appendChild(container);
     }
 
-    function transformDueDonne(win) {
+    function transformDueDonne(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
@@ -2234,6 +2389,11 @@
             list.className = 'due-donne-actions-list';
             buttons.forEach(btn => {
                 resetElement(btn);
+                const m = btn.className.match(/control(\d+)/) || btn.className.match(/\d+/);
+                const controlId = m ? Number(m[1] || m[0]) : null;
+                if (controlId !== null) {
+                    attachButtonHandler(btn, controlId, hWnd);
+                }
                 list.appendChild(btn);
             });
             container.appendChild(list);
@@ -2308,14 +2468,14 @@
         body.appendChild(container);
     }
 
-    function transformScooterShop(win) {
+    function transformScooterShop(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
         const img = body.querySelector('img.dlg_item') || body.querySelector('canvas') || body.querySelector('img');
         const soldiEl = body.querySelector('.control104') || body.querySelector('.control150');
-        const btnOk = body.querySelector('.control1');
-        const btnCancel = body.querySelector('.control2');
+        const btnOk = getButtonOk(body) || body.querySelector('.control1');
+        const btnCancel = getButtonCancel(body) || body.querySelector('.control2');
         const buttons = Array.from(body.querySelectorAll('button.dlg_item')).filter(b => !b.classList.contains('control1') && !b.classList.contains('control2'));
         const statics = Array.from(body.querySelectorAll('.control[data-class="STATIC"], .control[data-class="BorStatic"], .dlg_item[data-class="STATIC"]')).filter(s => s !== soldiEl);
 
@@ -2355,6 +2515,11 @@
             list.className = 'scooter-shop-actions-list';
             buttons.forEach(btn => {
                 resetElement(btn);
+                const m = btn.className.match(/control(\d+)/) || btn.className.match(/\d+/);
+                const controlId = m ? Number(m[1] || m[0]) : null;
+                if (controlId !== null) {
+                    attachButtonHandler(btn, controlId, hWnd);
+                }
                 list.appendChild(btn);
             });
             container.appendChild(list);
@@ -2362,23 +2527,35 @@
 
         const actionsBar = document.createElement('div');
         actionsBar.className = 'mobile-bottom-bar';
-        if (btnCancel) { resetElement(btnCancel); btnCancel.innerHTML = '✕ Esci'; actionsBar.appendChild(btnCancel); }
-        if (btnOk) { resetElement(btnOk); btnOk.innerHTML = '✓ Conferma'; actionsBar.appendChild(btnOk); }
+        if (btnCancel) {
+            resetElement(btnCancel);
+            btnCancel.className = 'dlg_item control2 button_cancel mobile-btn secondary';
+            btnCancel.innerHTML = '✕ Esci';
+            attachButtonHandler(btnCancel, 2, hWnd);
+            actionsBar.appendChild(btnCancel);
+        }
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
+            btnOk.innerHTML = '✓ Conferma';
+            attachButtonHandler(btnOk, 1, hWnd);
+            actionsBar.appendChild(btnOk);
+        }
         if (btnCancel || btnOk) container.appendChild(actionsBar);
 
         body.innerHTML = '';
         body.appendChild(container);
     }
 
-    function transformCellulare(win) {
+    function transformCellulare(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
         const img = body.querySelector('img.dlg_item') || body.querySelector('canvas') || body.querySelector('img');
         const soldiEl = body.querySelector('.control104');
         const creditoEl = body.querySelector('.control105');
-        const btnOk = body.querySelector('.control1');
-        const btnCancel = body.querySelector('.control2');
+        const btnOk = getButtonOk(body) || body.querySelector('.control1');
+        const btnCancel = getButtonCancel(body) || body.querySelector('.control2');
         const buttons = Array.from(body.querySelectorAll('button.dlg_item')).filter(b => !b.classList.contains('control1') && !b.classList.contains('control2'));
         const statics = Array.from(body.querySelectorAll('.control[data-class="STATIC"], .control[data-class="BorStatic"], .dlg_item[data-class="STATIC"]')).filter(s => s !== soldiEl && s !== creditoEl);
 
@@ -2414,6 +2591,11 @@
             list.className = 'phone-actions-list';
             buttons.forEach(btn => {
                 resetElement(btn);
+                const m = btn.className.match(/control(\d+)/) || btn.className.match(/\d+/);
+                const controlId = m ? Number(m[1] || m[0]) : null;
+                if (controlId !== null) {
+                    attachButtonHandler(btn, controlId, hWnd);
+                }
                 list.appendChild(btn);
             });
             container.appendChild(list);
@@ -2421,21 +2603,33 @@
 
         const actionsBar = document.createElement('div');
         actionsBar.className = 'mobile-bottom-bar';
-        if (btnCancel) { resetElement(btnCancel); btnCancel.innerHTML = '✕ Indietro'; actionsBar.appendChild(btnCancel); }
-        if (btnOk) { resetElement(btnOk); btnOk.innerHTML = '✓ Torna alla Dashboard'; actionsBar.appendChild(btnOk); }
+        if (btnCancel) {
+            resetElement(btnCancel);
+            btnCancel.className = 'dlg_item control2 button_cancel mobile-btn secondary';
+            btnCancel.innerHTML = '✕ Indietro';
+            attachButtonHandler(btnCancel, 2, hWnd);
+            actionsBar.appendChild(btnCancel);
+        }
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
+            btnOk.innerHTML = '✓ Torna alla Dashboard';
+            attachButtonHandler(btnOk, 1, hWnd);
+            actionsBar.appendChild(btnOk);
+        }
         if (btnCancel || btnOk) container.appendChild(actionsBar);
 
         body.innerHTML = '';
         body.appendChild(container);
     }
 
-    function transformScooterShowroom(win) {
+    function transformScooterShowroom(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
         const soldiEl = body.querySelector('.control104');
-        const btnOk = body.querySelector('.control1');
-        const btnCancel = body.querySelector('.control2');
+        const btnOk = getButtonOk(body) || body.querySelector('.control1');
+        const btnCancel = getButtonCancel(body) || body.querySelector('.control2');
 
         const radios = Array.from(body.querySelectorAll('input[type="radio"], input.bwcc'));
         const images = Array.from(body.querySelectorAll('img.dlg_item, img.ws_border')).filter(img => !img.src.includes('SCOOTER.gif'));
@@ -2490,8 +2684,9 @@
                 modelsGrid.querySelectorAll('.scooter-model-card').forEach(c => c.classList.remove('selected'));
                 card.classList.add('selected');
                 const match = radio.className.match(/\d+/);
-                if (match && typeof _PostMessage === 'function') {
-                    _PostMessage(_activeWindowHwnd, WM_COMMAND, Number(match[0]), 0);
+                const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : _activeWindowHwnd;
+                if (match && typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
+                    _PostMessage(targetHwnd, WM_COMMAND, Number(match[0]), 0);
                     stopWaiting();
                 }
             };
@@ -2519,15 +2714,27 @@
 
         const actionsBar = document.createElement('div');
         actionsBar.className = 'mobile-bottom-bar';
-        if (btnCancel) { resetElement(btnCancel); btnCancel.innerHTML = '✕ Annulla'; actionsBar.appendChild(btnCancel); }
-        if (btnOk) { resetElement(btnOk); btnOk.innerHTML = '✓ Compra'; actionsBar.appendChild(btnOk); }
+        if (btnCancel) {
+            resetElement(btnCancel);
+            btnCancel.className = 'dlg_item control2 button_cancel mobile-btn secondary';
+            btnCancel.innerHTML = '✕ Annulla';
+            attachButtonHandler(btnCancel, 2, hWnd);
+            actionsBar.appendChild(btnCancel);
+        }
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
+            btnOk.innerHTML = '✓ Compra';
+            attachButtonHandler(btnOk, 1, hWnd);
+            actionsBar.appendChild(btnOk);
+        }
         container.appendChild(actionsBar);
 
         body.innerHTML = '';
         body.appendChild(container);
     }
 
-    function transformTruccaScooter(win) {
+    function transformTruccaScooter(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
@@ -2544,7 +2751,7 @@
         const btnMarm = body.querySelector('.control122');
         const btnPist = body.querySelector('.control123');
         const btnFilt = body.querySelector('.control124');
-        const btnOk = body.querySelector('.control1');
+        const btnOk = getButtonOk(body) || body.querySelector('.control1');
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-trucca-scooter-view';
@@ -2577,15 +2784,17 @@
         // Tuning buttons
         const actionsList = document.createElement('div');
         actionsList.className = 'scooter-tuning-actions-list';
-        if (btnCarb) { resetElement(btnCarb); btnCarb.innerHTML = '<span>⚙️ Carburatore</span> <span>›</span>'; actionsList.appendChild(btnCarb); }
-        if (btnMarm) { resetElement(btnMarm); btnMarm.innerHTML = '<span>💨 Marmitta</span> <span>›</span>'; actionsList.appendChild(btnMarm); }
-        if (btnPist) { resetElement(btnPist); btnPist.innerHTML = '<span>🚀 Pistone/Cilindro</span> <span>›</span>'; actionsList.appendChild(btnPist); }
-        if (btnFilt) { resetElement(btnFilt); btnFilt.innerHTML = '<span>🌬️ Filtro dell\'aria</span> <span>›</span>'; actionsList.appendChild(btnFilt); }
+        if (btnCarb) { resetElement(btnCarb); btnCarb.className = 'dlg_item control121 mobile-btn secondary'; btnCarb.innerHTML = '<span>⚙️ Carburatore</span> <span>›</span>'; attachButtonHandler(btnCarb, 121, hWnd); actionsList.appendChild(btnCarb); }
+        if (btnMarm) { resetElement(btnMarm); btnMarm.className = 'dlg_item control122 mobile-btn secondary'; btnMarm.innerHTML = '<span>💨 Marmitta</span> <span>›</span>'; attachButtonHandler(btnMarm, 122, hWnd); actionsList.appendChild(btnMarm); }
+        if (btnPist) { resetElement(btnPist); btnPist.className = 'dlg_item control123 mobile-btn secondary'; btnPist.innerHTML = '<span>🚀 Pistone/Cilindro</span> <span>›</span>'; attachButtonHandler(btnPist, 123, hWnd); actionsList.appendChild(btnPist); }
+        if (btnFilt) { resetElement(btnFilt); btnFilt.className = 'dlg_item control124 mobile-btn secondary'; btnFilt.innerHTML = '<span>🌬️ Filtro dell\'aria</span> <span>›</span>'; attachButtonHandler(btnFilt, 124, hWnd); actionsList.appendChild(btnFilt); }
         container.appendChild(actionsList);
 
         if (btnOk) {
             resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
             btnOk.innerHTML = '✓ Fatto';
+            attachButtonHandler(btnOk, 1, hWnd);
             const bar = document.createElement('div'); bar.className = 'mobile-bottom-bar';
             bar.appendChild(btnOk);
             container.appendChild(bar);
@@ -2595,7 +2804,7 @@
         body.appendChild(container);
     }
 
-    function transformExitSession(win) {
+    function transformExitSession(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
@@ -2603,7 +2812,7 @@
         const radioClose = body.querySelector('input.control101') || body.querySelector('input[type="radio"]');
         const radioShutdown = body.querySelector('input.control102');
         const btnHelp = body.querySelector('button.control110') || body.querySelector('.control110');
-        const btnCancel = body.querySelector('button.control2') || body.querySelector('.control2');
+        const btnCancel = getButtonCancel(body) || body.querySelector('button.control2') || body.querySelector('.control2');
         const btnOk = getButtonOk(body) || body.querySelector('button.control1') || body.querySelector('.control1');
 
         const container = document.createElement('div');
@@ -2681,8 +2890,9 @@
             opt1.querySelector('.exit-radio-indicator').classList.toggle('checked', isOpt1);
             opt2.querySelector('.exit-radio-indicator').classList.toggle('checked', !isOpt1);
 
-            if (typeof _PostMessage === 'function') {
-                _PostMessage(_activeWindowHwnd, WM_COMMAND, controlId, 0);
+            const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : _activeWindowHwnd;
+            if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
+                _PostMessage(targetHwnd, WM_COMMAND, controlId, 0);
             }
             stopWaiting();
         }
@@ -2695,13 +2905,7 @@
             resetElement(btnHelp);
             btnHelp.className = 'dlg_item control110 exit-help-btn';
             btnHelp.innerHTML = 'ℹ️ Info: Spegni il computer ed esci di casa';
-            btnHelp.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (typeof _PostMessage === 'function') {
-                    _PostMessage(_activeWindowHwnd, WM_COMMAND, 110, 0);
-                }
-                stopWaiting();
-            });
+            attachButtonHandler(btnHelp, 110, hWnd);
             container.appendChild(btnHelp);
         }
 
@@ -2710,14 +2914,16 @@
         bar.className = 'mobile-bottom-bar';
         if (btnCancel) {
             resetElement(btnCancel);
-            btnCancel.className = 'dlg_item control2 mobile-btn secondary';
+            btnCancel.className = 'dlg_item control2 button_cancel mobile-btn secondary';
             btnCancel.innerHTML = 'Annulla';
+            attachButtonHandler(btnCancel, 2, hWnd);
             bar.appendChild(btnCancel);
         }
         if (btnOk) {
             resetElement(btnOk);
             btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
             btnOk.innerHTML = '✓ Conferma';
+            attachButtonHandler(btnOk, 1, hWnd);
             bar.appendChild(btnOk);
         }
         container.appendChild(bar);
