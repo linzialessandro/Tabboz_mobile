@@ -2967,13 +2967,29 @@
         if (_gameStarted) return;
         _gameStarted = true;
         console.log('[Tabboz] Launching WinMainStartup...');
-        setTimeout(() => {
-            if (typeof _WinMainStartup === 'function') {
-                _WinMainStartup();
-            } else if (typeof Module !== 'undefined' && typeof Module._WinMainStartup === 'function') {
-                Module._WinMainStartup();
+
+        function tryLaunch(attemptsLeft) {
+            const startupFn = (typeof _WinMainStartup === 'function') 
+                ? _WinMainStartup 
+                : (typeof Module !== 'undefined' && typeof Module._WinMainStartup === 'function' ? Module._WinMainStartup : null);
+
+            if (startupFn) {
+                try {
+                    startupFn();
+                    return;
+                } catch (e) {
+                    console.warn('[Tabboz] WinMainStartup execution deferred:', e);
+                }
             }
-        }, 50);
+
+            if (attemptsLeft > 0) {
+                setTimeout(() => tryLaunch(attemptsLeft - 1), 100);
+            } else {
+                console.error('[Tabboz] Fatal: Could not launch WinMainStartup after multiple retries.');
+            }
+        }
+
+        setTimeout(() => tryLaunch(30), 50);
     }
 
     function addDesktopIcon(name, icon, title) {
