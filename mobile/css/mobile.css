@@ -1300,13 +1300,15 @@ button:active, input[type="button"]:active {
 .date-hero-card,
 .phone-hero-card {
     width: 100%;
-    border-radius: 12px;
+    border-radius: 14px;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
     background: #ffffff;
     display: flex;
     justify-content: center;
-    border: 2px solid #b0c2c2;
+    align-items: center;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
 }
 
 .job-hero-card img,
@@ -1317,9 +1319,13 @@ button:active, input[type="button"]:active {
 .date-hero-card canvas,
 .phone-hero-card img,
 .phone-hero-card canvas {
-    width: 100% !important;
-    max-height: 180px !important;
-    object-fit: cover !important;
+    width: auto !important;
+    max-width: 100% !important;
+    max-height: 260px !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin: 0 auto !important;
+    border-radius: 8px !important;
 }
 
 .job-offer-desc-card,
@@ -1330,55 +1336,264 @@ button:active, input[type="button"]:active {
 .phone-desc-card {
     background: #ffffff;
     border-radius: 12px;
-    padding: 14px 16px;
+    padding: 16px 18px;
     font-size: 15px;
     line-height: 1.5;
     color: #1f2937;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    text-align: center;
+}
+
+.event-location-badge {
+    background: #e0f2fe !important;
+    color: #0369a1 !important;
+    font-weight: 800 !important;
+    font-size: 16px !important;
+    padding: 6px 14px !important;
+    border-radius: 8px !important;
+    display: inline-block !important;
+    margin: 6px auto !important;
+    border: 1px solid #bae6fd !important;
+    text-align: center !important;
+}
+
+/* Pagella Modern View (110) */
+.mobile-pagella-view {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    padding: 12px 14px 32px 14px !important;
+    width: 100% !important;
+}
+
+.pagella-result-card {
+    background: #f0fdfa !important;
+    border: 1.5px solid #99f6e4 !important;
+    border-radius: 12px !important;
+    padding: 14px 16px !important;
+    text-align: center !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+}
+
+.pagella-result-label {
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    color: #0f766e !important;
+    text-transform: uppercase !important;
+    margin-bottom: 4px !important;
+}
+
+.pagella-result-text {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #115e59 !important;
+}
+
+.pagella-grades-card {
+    background: #ffffff !important;
+    border-radius: 14px !important;
+    padding: 12px 16px !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid #e2e8f0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+}
+
+.pagella-grade-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 8px 10px !important;
+    border-radius: 8px !important;
+    background: #f8fafc !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #1f2937 !important;
+}
+
+.pagella-subject-name {
+    flex: 1 !important;
+}
+
+.pagella-grade-val {
+    font-weight: 800 !important;
+    font-size: 15px !important;
+    color: #008080 !important;
+    background: #e0f2fe !important;
+    padding: 2px 10px !important;
+    border-radius: 6px !important;
 }
 
 /* Job Quiz Modern View (200-209) */
+.mobile-quiz-view {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    padding: 12px 14px 32px 14px !important;
+    width: 100% !important;
+}
+
+.quiz-header-badge {
+    background: #e0f2fe !important;
+    color: #0369a1 !important;
+    border: 1px solid #bae6fd !important;
+    padding: 6px 14px !important;
+    border-radius: 20px !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    align-self: flex-start !important;
+    margin-bottom: 6px !important;
+}
+
 .quiz-intro-card {
-    background: #e6f7f7;
-    border: 1px solid #99c2c2;
-    border-radius: 12px;
-    padding: 12px 14px;
-    font-size: 14px;
-    line-height: 1.45;
-    color: #005a5a;
-    font-weight: 600;
+    background: #f0fdfa !important;
+    border: 1.5px solid #99f6e4 !important;
+    border-radius: 12px !important;
+    padding: 14px 16px !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+    color: #115e59 !important;
+    font-weight: 600 !important;
+    font-style: italic !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
 }
 
-.quiz-options-card {
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 12px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+.quiz-intro-text {
+    font-size: 13px !important;
+    color: #0f766e !important;
+    line-height: 1.5 !important;
 }
 
-.quiz-checkbox-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
-    border-radius: 8px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    font-size: 14px;
-    font-weight: 600;
-    color: #334d4d;
+.quiz-question-card {
+    background: #ffffff !important;
+    border-radius: 14px !important;
+    padding: 14px 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid #e2e8f0 !important;
 }
 
-.quiz-checkbox-row input[type="checkbox"] {
-    width: 22px;
-    height: 22px;
-    cursor: pointer;
+.quiz-question-header {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+}
+
+.quiz-question-badge {
+    background: #008080 !important;
+    color: #ffffff !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    padding: 4px 8px !important;
+    border-radius: 6px !important;
+    letter-spacing: 0.5px !important;
+    flex-shrink: 0 !important;
+    margin-top: 1px !important;
+}
+
+.quiz-question-title {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    color: #1f2937 !important;
+    line-height: 1.45 !important;
+}
+
+.quiz-options-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+
+.quiz-option-card {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 12px 14px !important;
+    border-radius: 10px !important;
+    background: #f8fafc !important;
+    border: 1.5px solid #e2e8f0 !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #1f2937 !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    transition: all 0.12s ease !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    min-height: 48px !important;
+    box-sizing: border-box !important;
+}
+
+.quiz-option-card:active {
+    transform: scale(0.98) !important;
+    filter: brightness(0.96) !important;
+}
+
+.quiz-option-card.selected {
+    background: #f0fdfa !important;
+    border-color: #008080 !important;
+    color: #005959 !important;
+    box-shadow: 0 2px 8px rgba(0, 128, 128, 0.15) !important;
+}
+
+.quiz-check-indicator {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
+    border-radius: 6px !important;
+    border: 2px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 13px !important;
+    font-weight: 900 !important;
+    color: transparent !important;
+    transition: all 0.12s ease !important;
+    flex-shrink: 0 !important;
+}
+
+.quiz-option-card.selected .quiz-check-indicator {
+    background: #008080 !important;
+    border-color: #008080 !important;
+    color: #ffffff !important;
+}
+
+.quiz-option-card.selected .quiz-check-indicator::after {
+    content: "✓";
+}
+
+.quiz-option-card input[type="checkbox"] {
+    display: none !important;
+}
+
+.quiz-option-text {
+    flex: 1 !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    cursor: pointer !important;
+    margin: 0 !important;
+}
+
+.quiz-submit-btn {
+    width: 100% !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    border-radius: 12px !important;
 }
 
 /* Company List Modern View (210) */

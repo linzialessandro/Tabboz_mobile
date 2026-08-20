@@ -46,6 +46,33 @@
     };
     window.Audio.prototype = OriginalAudio.prototype;
 
+    function sanitizeItalianText(str) {
+        if (!str || typeof str !== 'string') return str;
+        return str
+            .replace(/\\x92/g, "'")
+            .replace(/\\x91/g, "'")
+            .replace(/\\x93/g, '"')
+            .replace(/\\x94/g, '"')
+            .replace(/\\x85/g, '...')
+            .replace(/\\x80/g, '€')
+            .replace(/\\xF9/gi, 'ù')
+            .replace(/\\xE9/gi, 'é')
+            .replace(/\\xE8/gi, 'è')
+            .replace(/\\xE0/gi, 'à')
+            .replace(/\\xF2/gi, 'ò')
+            .replace(/\\xEC/gi, 'ì')
+            .replace(/\\xB0/gi, '°')
+            .replace(/\\xA9/gi, '©')
+            .replace(/\\xAE/gi, '®')
+            .replace(/\\x([0-9A-Fa-f]{2})/g, (match, hex) => {
+                try {
+                    return String.fromCharCode(parseInt(hex, 16));
+                } catch (e) {
+                    return match;
+                }
+            });
+    }
+
     const WINDOW_TMPL = `
         <div class="window">
           <div class="title-bar">
@@ -219,25 +246,30 @@
         console.log('[setActiveWindow] setting active window:', hWnd);
         _activeWindowHwnd = hWnd;
         _highestZIndex += 10;
+        const activeWin = document.querySelector(`#win${hWnd}`);
+        const isMsgBox = activeWin && activeWin.classList.contains("messagebox");
+
+        // Find the topmost non-messagebox window
+        const nonMsgWindows = Array.from(document.querySelectorAll(".window:not(.messagebox)"));
+        const topRegularWin = nonMsgWindows.length > 0 ? nonMsgWindows[nonMsgWindows.length - 1] : null;
+
         document.querySelectorAll(".window").forEach(w => {
-            if (!w.classList.contains("messagebox")) {
+            if (w === activeWin) {
+                w.classList.add("active-window");
+                w.style.zIndex = _highestZIndex;
+                w.style.display = isMsgBox ? 'block' : 'flex';
+                const tb = w.querySelector(".title-bar");
+                if (tb) tb.classList.remove("inactive");
+            } else if (isMsgBox && w === topRegularWin) {
+                // Keep parent dialog visible underneath modal alert
+                w.style.display = 'flex';
+                const tb = w.querySelector(".title-bar");
+                if (tb) tb.classList.add("inactive");
+            } else if (!w.classList.contains("messagebox")) {
                 w.classList.remove("active-window");
                 w.style.display = 'none';
             }
-            const tb = w.querySelector(".title-bar");
-            if (tb) tb.classList.add("inactive");
         });
-        const activeWin = document.querySelector(`#win${hWnd}`);
-        if (activeWin) {
-            activeWin.classList.add("active-window");
-            activeWin.style.zIndex = _highestZIndex;
-            activeWin.style.display = activeWin.classList.contains("messagebox") ? 'block' : 'flex';
-            const tb = activeWin.querySelector(".title-bar");
-            if (tb) tb.classList.remove("inactive");
-            try {
-                activeWin.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            } catch(e) {}
-        }
     }
 
     function fitWindowToScreen(win) {
@@ -317,7 +349,7 @@
     function setDlgItemText(hWnd, nIDDlgItem, lpString) {
         let control = document.querySelector(`#win${hWnd} .control${nIDDlgItem}`);
         if (control == null) return false;
-        const text = UTF8ToString(lpString);
+        const text = sanitizeItalianText(UTF8ToString(lpString));
         if (control.tagName === "INPUT") {
             if (control.type === "radio") {
                 const label = control.parentNode.querySelector("label");
@@ -419,9 +451,10 @@
 
         setWindowInitialPosition(win, x, y, width, height, parentWindowId);
 
-        if (lpCaption) {
+        if (lpCaption != null) {
+            const rawCap = typeof lpCaption === 'number' ? UTF8ToString(lpCaption) : lpCaption;
             const titleEl = win.querySelector('.title-bar-text');
-            if (titleEl) titleEl.innerText = typeof lpCaption === 'number' ? UTF8ToString(lpCaption) : lpCaption;
+            if (titleEl) titleEl.innerText = sanitizeItalianText(rawCap);
         }
         return win;
     }
@@ -454,7 +487,8 @@
             c.querySelector('.control7').style.display = 'none';
         }
 
-        c.querySelector('.content').innerText = typeof lpText === 'number' ? UTF8ToString(lpText) : lpText;
+        const rawText = typeof lpText === 'number' ? UTF8ToString(lpText) : lpText;
+        c.querySelector('.content').innerText = sanitizeItalianText(rawText);
         setActiveWindow(hWnd);
         showWindow(hWnd, 1);
         centerWindow(c);
@@ -1637,68 +1671,149 @@
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
-        const btnSubmit = body.querySelector('.control1');
+        function decodeItalian(str) {
+            if (!str) return '';
+            return str
+                .replace(/\\xF9/g, 'ù')
+                .replace(/\\xE9/g, 'é')
+                .replace(/\\xE8/g, 'è')
+                .replace(/\\xE0/g, 'à')
+                .replace(/\\xF2/g, 'ò')
+                .replace(/\\xEC/g, 'ì')
+                .replace(/\\xB0/g, '°');
+        }
 
-        // Extract checkboxes with their original labels and vertical positions
-        const checkContainers = Array.from(body.querySelectorAll('div')).filter(d => d.querySelector('input[type="checkbox"], input.bwcc'));
-        const checkItems = checkContainers.map(d => {
-            const chk = d.querySelector('input');
-            const lbl = d.querySelector('label');
-            const top = parseInt(d.style.top) || 0;
-            return { chk, lbl, top };
-        }).sort((a, b) => a.top - b.top);
+        const btnSubmit = getButtonOk(body) || body.querySelector('button.control1') || body.querySelector('button');
 
-        // Extract and sort statics/questions by original top position
-        const statics = Array.from(body.querySelectorAll('.control[data-class="BorStatic"], .control[data-class="STATIC"]'))
-            .map(st => ({ el: st, top: parseInt(st.style.top) || 0 }))
+        // Extract and sort all statics by vertical coordinate
+        const statics = Array.from(body.querySelectorAll('.control[data-class="BorStatic"], .control[data-class="STATIC"], div[data-class="STATIC"], div[data-class="BorStatic"], .dlg_item[data-class="BorStatic"], .borstatic'))
+            .map(st => {
+                const top = parseInt(st.style.top) || 0;
+                const text = st.innerText.trim();
+                return { el: st, top, text };
+            })
+            .filter(st => st.text.length > 0)
             .sort((a, b) => a.top - b.top);
+
+        // Group question texts by vertical bands
+        const introTexts = statics.filter(s => s.top < 115).map(s => sanitizeItalianText(s.text));
+        const qATexts = statics.filter(s => s.top >= 115 && s.top < 210).map(s => sanitizeItalianText(s.text));
+        const qBTexts = statics.filter(s => s.top >= 210 && s.top < 330).map(s => sanitizeItalianText(s.text));
+        const qCTexts = statics.filter(s => s.top >= 330 && s.top < 430).map(s => sanitizeItalianText(s.text));
+
+        const qATitle = sanitizeItalianText(qATexts.join(' '));
+        const qBTitle = sanitizeItalianText(qBTexts.join(' '));
+        const qCTitle = sanitizeItalianText(qCTexts.join(' '));
+
+        // Extract checkboxes and their labels
+        const checkInputs = Array.from(body.querySelectorAll('input[type="checkbox"], input.bwcc, input[data-class="BorCheck"]'));
+        const optionMap = {};
+
+        checkInputs.forEach(input => {
+            const match = input.className.match(/control(\d+)/) || input.className.match(/\d+/);
+            if (!match) return;
+            const controlId = parseInt(match[1] || match[0], 10);
+            
+            // Find paired label
+            let label = null;
+            if (input.id) {
+                label = body.querySelector(`label[for="${input.id}"]`);
+            }
+            if (!label && input.parentElement) {
+                label = input.parentElement.querySelector('label');
+            }
+            const text = sanitizeItalianText(label ? label.innerText.trim() : `Opzione ${controlId}`);
+            optionMap[controlId] = { input, label, text, controlId };
+        });
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-quiz-view';
 
-        if (statics.length > 0) {
+        // 1. Intro Card
+        if (introTexts.length > 0) {
             const introCard = document.createElement('div');
             introCard.className = 'quiz-intro-card';
-            statics.forEach(item => {
-                resetElement(item.el);
-                item.el.style.marginBottom = '4px';
-                introCard.appendChild(item.el);
-            });
+            introCard.innerHTML = `
+                <div class="quiz-header-badge">📋 TEST ATTITUDINALE</div>
+                <div class="quiz-intro-text">${introTexts.join('<br>')}</div>
+            `;
             container.appendChild(introCard);
         }
 
-        if (checkItems.length > 0) {
-            const optionsCard = document.createElement('div');
-            optionsCard.className = 'quiz-options-card';
-            checkItems.forEach(item => {
-                resetElement(item.chk);
-                const row = document.createElement('div');
-                row.className = 'quiz-checkbox-row';
-                row.appendChild(item.chk);
-                if (item.lbl) {
-                    resetElement(item.lbl);
-                    item.lbl.style.cursor = 'pointer';
-                    item.lbl.style.flex = '1';
-                    row.appendChild(item.lbl);
-                }
-                row.onclick = (e) => {
-                    if (e.target !== item.chk) {
-                        item.chk.checked = !item.chk.checked;
-                        const match = item.chk.className.match(/\d+/);
-                        if (match && typeof _PostMessage === 'function') {
-                            _PostMessage(_activeWindowHwnd, WM_COMMAND, Number(match[0]), 0);
-                            stopWaiting();
-                        }
+        // Helper to render a question block
+        function renderQuestionBlock(badgeText, questionTitle, controlIds) {
+            const card = document.createElement('div');
+            card.className = 'quiz-question-card';
+
+            const header = document.createElement('div');
+            header.className = 'quiz-question-header';
+            header.innerHTML = `<span class="quiz-question-badge">${badgeText}</span>`;
+            
+            // Clean title: remove "A.", "B.", "C." prefix if already in badge
+            let cleanTitle = questionTitle.replace(/^[A-C]\.\s*/i, '').trim();
+            if (!cleanTitle) cleanTitle = questionTitle;
+
+            const titleEl = document.createElement('div');
+            titleEl.className = 'quiz-question-title';
+            titleEl.innerText = cleanTitle;
+            header.appendChild(titleEl);
+            card.appendChild(header);
+
+            const optionsList = document.createElement('div');
+            optionsList.className = 'quiz-options-list';
+
+            controlIds.forEach(id => {
+                const opt = optionMap[id];
+                if (!opt) return;
+
+                resetElement(opt.input);
+                const optCard = document.createElement('div');
+                optCard.className = 'quiz-option-card' + (opt.input.checked ? ' selected' : '');
+
+                // Custom Checkbox Indicator
+                const checkIndicator = document.createElement('span');
+                checkIndicator.className = 'quiz-check-indicator';
+                optCard.appendChild(checkIndicator);
+
+                const lbl = document.createElement('span');
+                lbl.className = 'quiz-option-text';
+                lbl.innerText = decodeItalian(opt.text);
+                optCard.appendChild(lbl);
+
+                // Hidden actual input kept for WASM control allocation
+                optCard.appendChild(opt.input);
+
+                // Option touch handler: clicking anywhere toggles the checkbox
+                optCard.addEventListener('click', (e) => {
+                    opt.input.checked = !opt.input.checked;
+                    optCard.classList.toggle('selected', opt.input.checked);
+                    if (typeof _PostMessage === 'function') {
+                        _PostMessage(_activeWindowHwnd, WM_COMMAND, opt.controlId, 0);
+                        stopWaiting();
                     }
-                };
-                optionsCard.appendChild(row);
+                });
+
+                optionsList.appendChild(optCard);
             });
-            container.appendChild(optionsCard);
+
+            card.appendChild(optionsList);
+            container.appendChild(card);
         }
 
+        // 2. Question A (Controls 101, 102, 103)
+        renderQuestionBlock('Domanda A', qATitle || 'Domanda A', [101, 102, 103]);
+
+        // 3. Question B (Controls 104, 105, 106)
+        renderQuestionBlock('Domanda B', qBTitle || 'Domanda B', [104, 105, 106]);
+
+        // 4. Question C (Controls 107, 108, 109)
+        renderQuestionBlock('Domanda C', qCTitle || 'Domanda C', [107, 108, 109]);
+
+        // 5. Sticky Bottom Action Bar
         if (btnSubmit) {
             resetElement(btnSubmit);
-            btnSubmit.className += ' button_ok mobile-btn primary';
+            btnSubmit.className = 'dlg_item control1 button_ok mobile-btn primary quiz-submit-btn';
+            btnSubmit.innerHTML = '✓ Clicca qui quando hai finito il test !';
             const bar = document.createElement('div');
             bar.className = 'mobile-bottom-bar';
             bar.appendChild(btnSubmit);
@@ -1796,31 +1911,119 @@
         if (!body) return;
 
         const img = body.querySelector('img.dlg_item') || body.querySelector('canvas') || body.querySelector('img');
-        const locationEl = body.querySelector('.control111') || body.querySelector('.control[data-class="STATIC"]');
-        const btnOk = body.querySelector('.control1') || body.querySelector('.control2') || body.querySelector('button');
+        const btnOk = getButtonOk(body) || body.querySelector('.control1') || body.querySelector('.control2') || body.querySelector('button');
+
+        // Extract and sort all statics by vertical position
+        const statics = Array.from(body.querySelectorAll('.control[data-class="BorStatic"], .control[data-class="STATIC"], .dlg_item[data-class="BorStatic"], .dlg_item[data-class="STATIC"], div[data-class="BorStatic"], div[data-class="STATIC"], .borstatic'))
+            .map(st => {
+                const top = parseInt(st.style.top) || 0;
+                return { el: st, top };
+            })
+            .sort((a, b) => a.top - b.top);
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-event-view';
 
         if (img) {
             resetElement(img);
+            img.style.setProperty('width', 'auto', 'important');
+            img.style.setProperty('height', 'auto', 'important');
+            img.style.setProperty('max-width', '100%', 'important');
+            img.style.setProperty('max-height', '260px', 'important');
+            img.style.setProperty('object-fit', 'contain', 'important');
+            img.style.setProperty('display', 'block', 'important');
+            img.style.setProperty('margin', '0 auto', 'important');
             const card = document.createElement('div');
             card.className = 'event-hero-card';
             card.appendChild(img);
             container.appendChild(card);
         }
 
-        if (locationEl) {
-            resetElement(locationEl);
+        if (statics.length > 0) {
             const card = document.createElement('div');
             card.className = 'event-desc-card';
-            card.appendChild(locationEl);
+            statics.forEach(item => {
+                resetElement(item.el);
+                item.el.style.margin = '4px 0';
+                item.el.style.textAlign = 'center';
+                if (item.el.classList.contains('control111')) {
+                    item.el.className += ' event-location-badge';
+                }
+                card.appendChild(item.el);
+            });
             container.appendChild(card);
         }
 
         if (btnOk) {
             resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
             btnOk.innerHTML = '✓ Continua';
+            const bar = document.createElement('div');
+            bar.className = 'mobile-bottom-bar';
+            bar.appendChild(btnOk);
+            container.appendChild(bar);
+        }
+
+        body.innerHTML = '';
+        body.appendChild(container);
+    }
+
+    function transformPagella(win) {
+        const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
+        if (!body) return;
+
+        const risultatoEl = body.querySelector('.control119');
+        const btnOk = getButtonOk(body) || body.querySelector('button');
+
+        const subjects = [
+            { name: 'Agraria', id: 120 },
+            { name: 'Fisica', id: 121 },
+            { name: "Attività culturali", id: 122 },
+            { name: "Attività matematiche", id: 123 },
+            { name: 'Scienze industriali', id: 124 },
+            { name: 'Elettrochimica', id: 125 },
+            { name: 'Petrolchimica', id: 126 },
+            { name: 'Filosofia aziendale', id: 127 },
+            { name: 'Metallurgia', id: 128 },
+            { name: 'Condotta', id: 129 },
+        ];
+
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-pagella-view';
+
+        // Header / Result Card
+        if (risultatoEl) {
+            resetElement(risultatoEl);
+            const resCard = document.createElement('div');
+            resCard.className = 'pagella-result-card';
+            resCard.innerHTML = `<div class="pagella-result-label">📜 Giudizio Complessivo:</div>`;
+            risultatoEl.className += ' pagella-result-text';
+            resCard.appendChild(risultatoEl);
+            container.appendChild(resCard);
+        }
+
+        // Grades Card
+        const gradesCard = document.createElement('div');
+        gradesCard.className = 'pagella-grades-card';
+
+        subjects.forEach(sub => {
+            const gradeEl = body.querySelector(`.control${sub.id}`);
+            const row = document.createElement('div');
+            row.className = 'pagella-grade-row';
+            row.innerHTML = `<span class="pagella-subject-name">${sub.name}</span>`;
+            if (gradeEl) {
+                resetElement(gradeEl);
+                gradeEl.className += ' pagella-grade-val';
+                row.appendChild(gradeEl);
+            }
+            gradesCard.appendChild(row);
+        });
+        container.appendChild(gradesCard);
+
+        if (btnOk) {
+            resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
+            btnOk.innerHTML = '✓ Torna a Scuola';
             const bar = document.createElement('div');
             bar.className = 'mobile-bottom-bar';
             bar.appendChild(btnOk);
@@ -2327,6 +2530,9 @@
         const response = await fetch(`${RESOURCE_BASE}/dialogs/includes/${dialog}.inc.html`);
         let html = await response.text();
 
+        // Decode character escape sequences and CP1252 artifacts
+        html = sanitizeItalianText(html);
+
         // Fix relative image paths in templates
         html = html.replace(/src="resources\//g, 'src="../resources/');
         html = html.replace(/class="window-body[^"]*"/g, 'class="window-body"');
@@ -2390,9 +2596,9 @@
                 transformDate(win);
             } else if (dialogNum === 89) {
                 transformPalestra(win);
-            } else if (dialogNum >= 120 && dialogNum <= 123) {
-                transformCellulare(win);
-            } else if ((dialogNum >= 100 && dialogNum <= 107) || dialogNum === 110) {
+            } else if (dialogNum === 110) {
+                transformPagella(win);
+            } else if ((dialogNum >= 100 && dialogNum <= 107) || dialogNum === 96) {
                 transformEventBeatdown(win);
             } else if (dialogNum === 12) {
                 transformSplash(win);
