@@ -1671,17 +1671,19 @@
         startBtn.setAttribute('data-class', 'BorBtn');
         startBtn.style.cssText = 'font-size: 18px; font-weight: 800; padding: 16px 32px; border-radius: 14px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3); width: 85%; max-width: 320px; cursor: pointer;';
         startBtn.innerHTML = '⚡ TOCCA PER GIOCARE ⚡';
-        container.appendChild(startBtn);
 
-        container.addEventListener('click', (e) => {
-            if (!e.target.closest('.control202')) {
-                e.stopPropagation();
-                if (typeof _PostMessage === 'function') {
-                    _PostMessage(_activeWindowHwnd, WM_COMMAND, 202, 0);
-                }
-                stopWaiting();
+        function handleStart(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof _PostMessage === 'function') {
+                _PostMessage(_activeWindowHwnd, WM_COMMAND, 202, 0);
             }
-        });
+            stopWaiting();
+        }
+
+        startBtn.addEventListener('click', handleStart);
+        container.addEventListener('click', handleStart);
+        container.appendChild(startBtn);
 
         body.innerHTML = '';
         body.appendChild(container);
