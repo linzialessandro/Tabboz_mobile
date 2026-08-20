@@ -241,18 +241,7 @@
     }
 
     function fitWindowToScreen(win) {
-        if (!win) return;
-        const screenWidth = window.innerWidth - 12;
-        const winWidth = parseInt(win.style.width) || win.offsetWidth || 410;
-        if (winWidth > screenWidth && screenWidth > 200) {
-            const scale = Math.min(1, screenWidth / winWidth);
-            win.style.transform = `scale(${scale})`;
-            win.style.transformOrigin = 'top center';
-            win.style.marginBottom = `${(1 - scale) * -win.offsetHeight}px`;
-        } else {
-            win.style.transform = '';
-            win.style.marginBottom = '';
-        }
+        // Windows are natively responsive full-screen flex containers
     }
 
     window.addEventListener('resize', () => {
@@ -403,20 +392,16 @@
             win.style.transform = 'translate(-50%, -50%)';
             return;
         }
+        win.style.position = 'absolute';
         win.style.left = '0px';
         win.style.top = '0px';
+        win.style.margin = '0px';
         win.style.width = '100%';
         win.style.height = '100%';
         win.style.transform = 'none';
     }
 
     function setWindowInitialPosition(win, x, y, width, height, parentWindowId) {
-        if (width !== CW_SKIPRESIZE && width !== CW_USEDEFAULT) {
-            win.style.width = width + 'px';
-        }
-        if (height !== CW_SKIPRESIZE && height !== CW_USEDEFAULT) {
-            win.style.height = height + 'px';
-        }
         centerWindow(win);
     }
 
@@ -424,6 +409,7 @@
         const wall = createElementFromHTML(WALL_TMPL);
         const win = createElementFromHTML(html || WINDOW_TMPL);
         win.style.display = 'none';
+        win.style.margin = '0px';
         wall.id = 'wall' + hWnd;
         win.id = 'win' + hWnd;
 
@@ -1577,17 +1563,36 @@
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
-        // Just make the splash image fit nicely and hide decorative elements
-        body.querySelectorAll('.BorShade, .ws_border, .horizontal_bump, .vertical_bump').forEach(el => {
-            if (!el.classList.contains('dlg_item')) el.style.display = 'none';
+        const titleBar = win.querySelector('.title-bar');
+        if (titleBar) titleBar.style.display = 'none';
+
+        const img = body.querySelector('img.control202') || body.querySelector('img');
+        const container = document.createElement('div');
+        container.className = 'mobile-screen-container mobile-splash-view';
+        container.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 80vh; gap: 24px; cursor: pointer; text-align: center;';
+
+        if (img) {
+            resetElement(img);
+            img.style.cssText = 'max-width: 90%; max-height: 55vh; object-fit: contain; border-radius: 16px; box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4); background: #ffffff; cursor: pointer;';
+            container.appendChild(img);
+        }
+
+        const startBtn = document.createElement('button');
+        startBtn.className = 'dlg_item control202 mobile-btn primary';
+        startBtn.setAttribute('data-class', 'BorBtn');
+        startBtn.style.cssText = 'font-size: 18px; font-weight: 800; padding: 16px 32px; border-radius: 14px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3); width: 85%; max-width: 320px; cursor: pointer;';
+        startBtn.innerHTML = '⚡ TOCCA PER GIOCARE ⚡';
+        container.appendChild(startBtn);
+
+        // Clicking anywhere on splash container or window dismisses splash and enters game
+        container.addEventListener('click', (e) => {
+            if (img && e.target !== img) {
+                img.click();
+            }
         });
-        body.querySelectorAll('.dlg_item, img, canvas').forEach(el => {
-            el.style.position = 'static';
-            el.style.left = 'auto';
-            el.style.top = 'auto';
-            el.style.maxWidth = '100%';
-            el.style.height = 'auto';
-        });
+
+        body.innerHTML = '';
+        body.appendChild(container);
     }
 
     function transformJobOffer(win) {

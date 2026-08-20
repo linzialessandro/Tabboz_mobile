@@ -12,16 +12,22 @@
     <link rel="icon" type="image/x-icon" href="../resources/icons/1.ico">
     <link rel="stylesheet" href="../resources/css/98.css">
     <link rel="stylesheet" href="../resources/css/novantotto.css">
-    <link rel="stylesheet" href="css/mobile.css?v=3">
-    <title>Tabboz Simulator Mobile</title>
+    <link rel="stylesheet" href="css/mobile.css?v=4">
+    <title>Tabboz Mobile</title>
 </head>
 <body>
     <button class="save-manager-floating-btn" onclick="SaveManager.openModal()" title="Gestione Salvataggi">💾 Salvataggi</button>
     <div class="screen" id="screen"></div>
-    <script src="js/mobile-bridge.js?v=3"></script>
-    <script src="js/save-manager.js?v=3"></script>
+    <script src="js/mobile-bridge.js?v=4"></script>
+    <script src="js/save-manager.js?v=4"></script>
     <script type="text/javascript">
     var Module = {
+        locateFile: function(path, prefix) {
+            if (path.endsWith('.wasm')) {
+                return 'zarrosim.wasm';
+            }
+            return prefix + path;
+        },
         postRun: () => {
             setTimeout(() => {
                 if (typeof _WinMainStartup === 'function') {

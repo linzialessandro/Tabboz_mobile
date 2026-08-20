@@ -40,29 +40,50 @@ html, body {
 
 /* Full-Screen Mobile Window Experience */
 .window:not(.messagebox):not(.save-modal-window) {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    transform: none;
-    margin: 0;
-    border-radius: 0;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    transform: none !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
     display: none;
     flex-direction: column;
     background: #d8dede;
-    border: none;
-    box-shadow: none;
+    border: none !important;
+    box-shadow: none !important;
     overflow: hidden;
     box-sizing: border-box;
 }
 
 .window:not(.messagebox):not(.save-modal-window).active-window {
     display: flex !important;
+}
+
+/* Splash Screen (Dialog 12) */
+.window.dlg-12 {
+    background: #004d4d !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+.window.dlg-12 .title-bar,
+.window.dlg-12 .menubar {
+    display: none !important;
+}
+
+.window.dlg-12 .window-body {
+    background: #004d4d !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
 }
 
 .window.messagebox {
