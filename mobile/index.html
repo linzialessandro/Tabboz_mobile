@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="it">
+<head>
     <meta charset="UTF-8">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#008080">
     <meta name="description" content="Tabboz Simulator - Versione Mobile">
@@ -14,7 +16,7 @@
     <link rel="icon" type="image/x-icon" href="../resources/icons/1.ico">
     <link rel="stylesheet" href="../resources/css/98.css">
     <link rel="stylesheet" href="../resources/css/novantotto.css">
-    <link rel="stylesheet" href="css/mobile.css?v=19">
+    <link rel="stylesheet" href="css/mobile.css?v=20">
     <title>Tabboz Mobile</title>
 </head>
 <body>
@@ -29,8 +31,8 @@
 
     <button class="save-manager-floating-btn" onclick="SaveManager.openModal()" title="Gestione Salvataggi">💾 Salvataggi</button>
     <div class="screen" id="screen"></div>
-    <script src="js/mobile-bridge.js?v=18"></script>
-    <script src="js/save-manager.js?v=18"></script>
+    <script src="js/mobile-bridge.js?v=20"></script>
+    <script src="js/save-manager.js?v=20"></script>
     <script type="text/javascript">
     var Module = {
         locateFile: function(path, prefix) {
@@ -48,15 +50,7 @@
         printErr: (text) => console.error(text),
     };
 
-    // Clean up any stale service workers from previous versions
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-            for (let registration of registrations) {
-                registration.unregister();
-            }
-        });
-    }
     </script>
-    <script type="text/javascript" src="../zarrosim.js?v=18"></script>
+    <script type="text/javascript" src="../zarrosim.js?v=20"></script>
 </body>
 </html>

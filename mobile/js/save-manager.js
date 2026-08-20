@@ -9,6 +9,28 @@
 const SaveManager = (() => {
     const REG_PREFIX = "HKEY_CURRENT_USER\\Software\\Obscured Truckware\\Tabboz Simulator 32";
     const SLOTS_KEY = "tabboz_mobile_slots_meta";
+    
+    function escapeHtml(unsafe) {
+        if (typeof unsafe !== 'string') unsafe = String(unsafe || '');
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function safeSetItem(key, value) {
+        try {
+            localStorage.setItem(key, value);
+        } catch (e) {
+            if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+                alert("Spazio di archiviazione esaurito! Impossibile salvare.");
+            } else {
+                console.error("Errore durante il salvataggio:", e);
+            }
+        }
+    }
 
     function getRegistryValue(subKey) {
         const fullKey = subKey ? `${REG_PREFIX}\\${subKey}` : REG_PREFIX;
@@ -70,7 +92,7 @@ const SaveManager = (() => {
         keysToRemove.forEach(k => localStorage.removeItem(k));
 
         for (const [k, v] of Object.entries(saveData.registry)) {
-            localStorage.setItem(k, v);
+            safeSetItem(k, v);
         }
     }
 
@@ -84,10 +106,10 @@ const SaveManager = (() => {
 
     function saveToSlot(slotIndex) {
         const state = getCurrentGameState();
-        localStorage.setItem(`tabboz_slot_${slotIndex}`, JSON.stringify(state));
+        safeSetItem(`tabboz_slot_${slotIndex}`, JSON.stringify(state));
         const meta = getSlotsMetadata();
         meta[slotIndex] = state.meta;
-        localStorage.setItem(SLOTS_KEY, JSON.stringify(meta));
+        safeSetItem(SLOTS_KEY, JSON.stringify(meta));
         return state.meta;
     }
 
@@ -103,7 +125,7 @@ const SaveManager = (() => {
         localStorage.removeItem(`tabboz_slot_${slotIndex}`);
         const meta = getSlotsMetadata();
         delete meta[slotIndex];
-        localStorage.setItem(SLOTS_KEY, JSON.stringify(meta));
+        safeSetItem(SLOTS_KEY, JSON.stringify(meta));
     }
 
     function resetGame() {
@@ -161,6 +183,15 @@ const SaveManager = (() => {
         modal = document.createElement("div");
         modal.id = "save-manager-modal";
         modal.className = "save-modal-backdrop";
+        modal.setAttribute("role", "dialog");
+        modal.setAttribute("aria-modal", "true");
+        modal.setAttribute("aria-label", "Gestione Salvataggi");
+
+        modal.addEventListener("click", (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
 
         let slotsHtml = "";
         for (let i = 1; i <= 3; i++) {
@@ -173,8 +204,8 @@ const SaveManager = (() => {
                             <span class="slot-time">${new Date(sMeta.timestamp).toLocaleDateString()} ${new Date(sMeta.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                         </div>
                         <div class="slot-body">
-                            <strong>${sMeta.name}</strong> • ${sMeta.soldi}<br/>
-                            Figosità: ${sMeta.figosita} • Data: ${sMeta.date} • Tipa: ${sMeta.tipa}
+                            <strong>${escapeHtml(sMeta.name)}</strong> • ${escapeHtml(sMeta.soldi)}<br/>
+                            Figosità: ${escapeHtml(sMeta.figosita)} • Data: ${escapeHtml(sMeta.date)} • Tipa: ${escapeHtml(sMeta.tipa)}
                         </div>
                         <div class="slot-actions">
                             <button class="btn-slot-load" onclick="SaveManager.loadFromSlot(${i})">Carica</button>
@@ -210,8 +241,8 @@ const SaveManager = (() => {
                     <div class="current-state-card">
                         <div class="current-title">Partita Attuale</div>
                         <div class="current-info">
-                            <strong>${current.meta.name}</strong> — ${current.meta.soldi}<br/>
-                            Data: ${current.meta.date} • Figosità: ${current.meta.figosita} • Sizze: ${current.meta.sizze}
+                            <strong>${escapeHtml(current.meta.name)}</strong> — ${escapeHtml(current.meta.soldi)}<br/>
+                            Data: ${escapeHtml(current.meta.date)} • Figosità: ${escapeHtml(current.meta.figosita)} • Sizze: ${escapeHtml(current.meta.sizze)}
                         </div>
                     </div>
 
@@ -240,11 +271,19 @@ const SaveManager = (() => {
         document.body.appendChild(modal);
     }
 
+    function handleKeyDown(e) {
+        if (e.key === "Escape" || e.key === "Esc") {
+            closeModal();
+        }
+    }
+
     function openModal() {
         renderModal();
+        window.addEventListener("keydown", handleKeyDown);
     }
 
     function closeModal() {
+        window.removeEventListener("keydown", handleKeyDown);
         const modal = document.getElementById("save-manager-modal");
         if (modal) modal.remove();
     }
@@ -269,7 +308,11 @@ const SaveManager = (() => {
 
     function handleImportInput(input) {
         if (input.files && input.files[0]) {
-            importSaveFile(input.files[0]).catch(err => alert(err.message));
+            importSaveFile(input.files[0])
+                .catch(err => alert(err.message))
+                .finally(() => { input.value = ''; });
+        } else {
+            input.value = '';
         }
     }
 

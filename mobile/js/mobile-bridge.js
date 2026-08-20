@@ -19,9 +19,8 @@
     window.strings = window.strings || {};
     exports.strings = window.strings;
 
-    _resolve = null;
-    _activeWindowHwnd = null;
-    _isOpen = false;
+    let _resolve = null;
+    let _activeWindowHwnd = null;
 
     // =========================================================================
     // Win32 Constants
@@ -35,6 +34,51 @@
     const CW_SKIPRESIZE = 0x8888;
 
     const RESOURCE_BASE = '../resources';
+
+    // Dialog IDs (mapped from zarrosim.h / resource.h)
+    const DLG = {
+        DASHBOARD: 1,
+        ABOUT: 2,
+        DISCO: 4,
+        FAMIGLIA: 5,
+        COMPAGNIA: 6,
+        SCOOTER: 7,
+        NEGOZI_MENU: 8,
+        TIPA: 9,
+        TIPA_ALT: 190,
+        SCUOLA: 10,
+        SCUOLA_ALT: 11,
+        SPLASH: 12,
+        LAVORO: 13,
+        EXIT_SESSION: 16,
+        SCOOTER_SHOP_MIN: 70,
+        SCOOTER_SHOP_MAX: 72,
+        TRUCCA_SCOOTER: 73,
+        SHOWROOM_MIN: 74,
+        SHOWROOM_MAX: 79,
+        SHOP_MIN: 80,
+        SHOP_MAX: 86,
+        TABACCHI: 88,
+        PALESTRA: 89,
+        CERCA_TIPA: 91,
+        CERCA_TIPA_ALT: 191,
+        DUE_DONNE: 92,
+        DUE_DONNE_ALT: 192,
+        DATE_MIN: 93,
+        DATE_MAX: 94,
+        DUE_DI_PICCHE: 95,
+        EVENT_BEATDOWN: 96,
+        EVENTS_MIN: 100,
+        EVENTS_MAX: 107,
+        PAGELLA: 110,
+        JOB_QUIZ_MIN: 200,
+        JOB_QUIZ_MAX: 209,
+        COMPANY_LIST: 210,
+        COMPANY_INFO_MIN: 290,
+        COMPANY_INFO_MAX: 297,
+        JOB_OFFER_MIN: 390,
+        JOB_OFFER_MAX: 397
+    };
 
     // Intercept Audio for mobile sub-directory compatibility
     const OriginalAudio = window.Audio;
@@ -180,9 +224,20 @@
             });
         }
 
+        registerMenuClickListener();
+    }
+
+    let _menuClickListenerRegistered = false;
+    function registerMenuClickListener() {
+        if (_menuClickListenerRegistered) return;
+        _menuClickListenerRegistered = true;
         document.addEventListener('click', (event) => {
             if (!event.target.classList.contains('active-menu') && !event.target.closest('.active-menu')) {
-                closeMenu();
+                document.querySelectorAll('.active-menu').forEach((item) => {
+                    item.classList.remove('active-menu');
+                    const ul = item.querySelector('ul');
+                    if (ul) ul.style.display = 'none';
+                });
             }
         });
     }
@@ -271,24 +326,13 @@
             }
         });
     }
-
-    function fitWindowToScreen(win) {
-        // Windows are natively responsive full-screen flex containers
-    }
-
-    window.addEventListener('resize', () => {
-        document.querySelectorAll('.window').forEach(win => fitWindowToScreen(win));
-    });
-
     function showWindow(hWnd, show) {
         const win = document.querySelector('#win' + hWnd);
         const wall = document.querySelector('#wall' + hWnd);
         if (win != null) {
             win.style.display = show ? 'block' : 'none';
             if (wall != null) wall.style.display = show ? 'block' : 'none';
-            if (show) {
-                fitWindowToScreen(win);
-            }
+
             return true;
         }
         return false;
@@ -496,12 +540,7 @@
 
     function resetElement(el) {
         if (!el) return;
-        el.style.position = 'static';
-        el.style.left = 'auto';
-        el.style.top = 'auto';
-        el.style.width = 'auto';
-        el.style.height = 'auto';
-        el.style.margin = '0';
+        el.classList.add('mobile-reset');
     }
 
     function getButtonOk(body) {
@@ -1614,18 +1653,18 @@
         const img = body.querySelector('img.control202') || body.querySelector('img');
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-splash-view';
-        container.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 80vh; gap: 24px; cursor: pointer; text-align: center;';
+        container.classList.add('splash-container');
 
         if (img) {
             resetElement(img);
-            img.style.cssText = 'max-width: 90%; max-height: 55vh; object-fit: contain; border-radius: 16px; box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4); background: #ffffff; cursor: pointer;';
+            img.classList.add('splash-image');
             container.appendChild(img);
         }
 
         const startBtn = document.createElement('button');
         startBtn.className = 'dlg_item control202 mobile-btn primary';
         startBtn.setAttribute('data-class', 'BorBtn');
-        startBtn.style.cssText = 'font-size: 18px; font-weight: 800; padding: 16px 32px; border-radius: 14px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3); width: 85%; max-width: 320px; cursor: pointer;';
+        startBtn.classList.add('splash-start-btn');
         startBtn.innerHTML = '⚡ TOCCA PER GIOCARE ⚡';
         container.appendChild(startBtn);
 
@@ -1684,18 +1723,6 @@
     function transformJobQuiz(win) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
-
-        function decodeItalian(str) {
-            if (!str) return '';
-            return str
-                .replace(/\\xF9/g, 'ù')
-                .replace(/\\xE9/g, 'é')
-                .replace(/\\xE8/g, 'è')
-                .replace(/\\xE0/g, 'à')
-                .replace(/\\xF2/g, 'ò')
-                .replace(/\\xEC/g, 'ì')
-                .replace(/\\xB0/g, '°');
-        }
 
         const btnSubmit = getButtonOk(body) || body.querySelector('button.control1') || body.querySelector('button');
 
@@ -1791,7 +1818,7 @@
 
                 const lbl = document.createElement('span');
                 lbl.className = 'quiz-option-text';
-                lbl.innerText = decodeItalian(opt.text);
+                lbl.innerText = sanitizeItalianText(opt.text);
                 optCard.appendChild(lbl);
 
                 // Hidden actual input kept for WASM control allocation
@@ -1940,13 +1967,7 @@
 
         if (img) {
             resetElement(img);
-            img.style.setProperty('width', 'auto', 'important');
-            img.style.setProperty('height', 'auto', 'important');
-            img.style.setProperty('max-width', '100%', 'important');
-            img.style.setProperty('max-height', '260px', 'important');
-            img.style.setProperty('object-fit', 'contain', 'important');
-            img.style.setProperty('display', 'block', 'important');
-            img.style.setProperty('margin', '0 auto', 'important');
+            img.classList.add('event-hero-img');
             const card = document.createElement('div');
             card.className = 'event-hero-card';
             card.appendChild(img);
@@ -2672,8 +2693,15 @@
     }
 
     async function dialogBox(hWnd, dialog, parentWindowId, hInstance) {
-        const response = await fetch(`${RESOURCE_BASE}/dialogs/includes/${dialog}.inc.html`);
-        let html = await response.text();
+        let html;
+        try {
+            const response = await fetch(`${RESOURCE_BASE}/dialogs/includes/${dialog}.inc.html`);
+            if (!response.ok) throw new Error(`Dialog ${dialog} fetch failed: ${response.status}`);
+            html = await response.text();
+        } catch (err) {
+            console.error('[dialogBox] Failed to load dialog template:', dialog, err);
+            return;
+        }
 
         // Decode character escape sequences and CP1252 artifacts
         html = sanitizeItalianText(html);
@@ -2743,8 +2771,6 @@
                 transformDueDonne(win);
             } else if (dialogNum === 95) {
                 transformDueDiPicche(win);
-            } else if (dialogNum === 96) {
-                transformEventBeatdown(win);
             } else if (dialogNum >= 93 && dialogNum <= 94) {
                 transformDate(win);
             } else if (dialogNum === 89) {
@@ -2769,9 +2795,12 @@
             const dataClass = element.getAttribute('data-class');
             if (hMenu !== -1 && dataClass && typeof _AllocateControl === 'function') {
                 const lpClassName = _malloc(128);
-                stringToUTF8(dataClass, lpClassName, 128);
-                _AllocateControl(hInstance, lpClassName, hWnd, hMenu);
-                _free(lpClassName);
+                try {
+                    stringToUTF8(dataClass, lpClassName, 128);
+                    _AllocateControl(hInstance, lpClassName, hWnd, hMenu);
+                } finally {
+                    _free(lpClassName);
+                }
             }
         });
 
@@ -2794,6 +2823,8 @@
                 if (m) {
                     setActiveWindow(Number(m[0]));
                 }
+            } else {
+                _activeWindowHwnd = null;
             }
         }
     }
