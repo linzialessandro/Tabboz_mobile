@@ -558,6 +558,19 @@
         return body.querySelector('button.control2') || body.querySelector('button.button_cancel') || body.querySelector('button[class*="control2"]') || body.querySelector('.button_cancel') || body.querySelector('.control2');
     }
 
+    function attachButtonHandler(button, controlId, winHwnd) {
+        if (!button) return;
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const targetHwnd = (winHwnd !== undefined && winHwnd !== null) ? winHwnd : _activeWindowHwnd;
+            if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
+                _PostMessage(targetHwnd, WM_COMMAND, controlId, 0);
+            }
+            stopWaiting();
+        });
+    }
+
     function transformDashboard(win) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
@@ -1689,7 +1702,7 @@
         body.appendChild(container);
     }
 
-    function transformJobOffer(win) {
+    function transformJobOffer(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
@@ -1719,15 +1732,25 @@
 
         const actionsBar = document.createElement('div');
         actionsBar.className = 'mobile-bottom-bar';
-        if (btnLascio) { resetElement(btnLascio); btnLascio.className += ' mobile-btn secondary'; actionsBar.appendChild(btnLascio); }
-        if (btnPresento) { resetElement(btnPresento); btnPresento.className += ' button_ok'; actionsBar.appendChild(btnPresento); }
+        if (btnLascio) {
+            resetElement(btnLascio);
+            btnLascio.className = 'dlg_item control2 mobile-btn secondary';
+            attachButtonHandler(btnLascio, 2, hWnd);
+            actionsBar.appendChild(btnLascio);
+        }
+        if (btnPresento) {
+            resetElement(btnPresento);
+            btnPresento.className = 'dlg_item control1 button_ok mobile-btn primary';
+            attachButtonHandler(btnPresento, 1, hWnd);
+            actionsBar.appendChild(btnPresento);
+        }
         container.appendChild(actionsBar);
 
         body.innerHTML = '';
         body.appendChild(container);
     }
 
-    function transformJobQuiz(win) {
+    function transformJobQuiz(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
@@ -1833,10 +1856,13 @@
 
                 // Option touch handler: clicking anywhere toggles the checkbox
                 optCard.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     opt.input.checked = !opt.input.checked;
                     optCard.classList.toggle('selected', opt.input.checked);
-                    if (typeof _PostMessage === 'function') {
-                        _PostMessage(_activeWindowHwnd, WM_COMMAND, opt.controlId, 0);
+                    const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : _activeWindowHwnd;
+                    if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
+                        _PostMessage(targetHwnd, WM_COMMAND, opt.controlId, 0);
                         stopWaiting();
                     }
                 });
@@ -1862,6 +1888,7 @@
             resetElement(btnSubmit);
             btnSubmit.className = 'dlg_item control1 button_ok mobile-btn primary quiz-submit-btn';
             btnSubmit.innerHTML = '✓ Clicca qui quando hai finito il test !';
+            attachButtonHandler(btnSubmit, 1, hWnd);
             const bar = document.createElement('div');
             bar.className = 'mobile-bottom-bar';
             bar.appendChild(btnSubmit);
@@ -1872,12 +1899,12 @@
         body.appendChild(container);
     }
 
-    function transformCompanyList(win) {
+    function transformCompanyList(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
         const img = body.querySelector('img.control289') || body.querySelector('img');
-        const btnOk = body.querySelector('.control1');
+        const btnOk = body.querySelector('.control1') || body.querySelector('button');
         const buttons = Array.from(body.querySelectorAll('button.dlg_item')).filter(b => !b.classList.contains('control1'));
 
         const container = document.createElement('div');
@@ -1895,15 +1922,22 @@
         list.className = 'company-buttons-list';
         buttons.forEach(btn => {
             resetElement(btn);
+            const m = btn.className.match(/control(\d+)/) || btn.className.match(/\d+/);
+            const controlId = m ? Number(m[1] || m[0]) : null;
             const text = btn.innerText.trim();
             btn.innerHTML = `<span class="btn-icon">🏢</span> <span class="btn-text">${text}</span> <span class="btn-chevron">›</span>`;
+            if (controlId !== null) {
+                attachButtonHandler(btn, controlId, hWnd);
+            }
             list.appendChild(btn);
         });
         container.appendChild(list);
 
         if (btnOk) {
             resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
             btnOk.innerHTML = '✓ Torna Indietro';
+            attachButtonHandler(btnOk, 1, hWnd);
             const bar = document.createElement('div');
             bar.className = 'mobile-bottom-bar';
             bar.appendChild(btnOk);
@@ -1914,12 +1948,12 @@
         body.appendChild(container);
     }
 
-    function transformCompanyInfo(win) {
+    function transformCompanyInfo(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
         const img = body.querySelector('img.dlg_item') || body.querySelector('img');
-        const btnOk = body.querySelector('.control1');
+        const btnOk = body.querySelector('.control1') || body.querySelector('button');
         const statics = Array.from(body.querySelectorAll('.control[data-class="STATIC"], .control[data-class="BorStatic"], div.ss_center'));
 
         const container = document.createElement('div');
@@ -1943,7 +1977,9 @@
 
         if (btnOk) {
             resetElement(btnOk);
+            btnOk.className = 'dlg_item control1 button_ok mobile-btn primary';
             btnOk.innerHTML = '✓ Chiudi Informazioni';
+            attachButtonHandler(btnOk, 1, hWnd);
             const bar = document.createElement('div');
             bar.className = 'mobile-bottom-bar';
             bar.appendChild(btnOk);
@@ -2207,12 +2243,12 @@
         body.appendChild(container);
     }
 
-    function transformDueDiPicche(win) {
+    function transformDueDiPicche(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
         const img = body.querySelector('img.dlg_item') || body.querySelector('img');
-        const descEl = body.querySelector('.control105') || body.querySelector('.control[data-class="STATIC"]');
+        let descEl = body.querySelector('.control105') || body.querySelector('.control[data-class="STATIC"]');
         const btnOk = getButtonOk(body) || body.querySelector('button.control1') || body.querySelector('button');
 
         const container = document.createElement('div');
@@ -2241,11 +2277,19 @@
         quoteLabel.innerHTML = '💬 La ragazza ti dice:';
         quoteCard.appendChild(quoteLabel);
 
-        if (descEl) {
+        if (!descEl) {
+            descEl = document.createElement('div');
+            descEl.className = 'dlg_item control105 picche-quote-text';
+            descEl.setAttribute('data-class', 'STATIC');
+            descEl.innerText = 'Non ti caga nemmeno di striscio...';
+        } else {
             resetElement(descEl);
             descEl.className = 'dlg_item control105 picche-quote-text';
-            quoteCard.appendChild(descEl);
+            if (!descEl.innerText.trim()) {
+                descEl.innerText = 'Non ti caga nemmeno di striscio...';
+            }
         }
+        quoteCard.appendChild(descEl);
         container.appendChild(quoteCard);
 
         // Bottom Action Button
@@ -2253,6 +2297,7 @@
             resetElement(btnOk);
             btnOk.className = 'dlg_item control1 button_ok mobile-btn danger picche-action-btn';
             btnOk.innerHTML = '💔 Ci rinuncio...';
+            attachButtonHandler(btnOk, 1, hWnd);
             const bar = document.createElement('div');
             bar.className = 'mobile-bottom-bar';
             bar.appendChild(btnOk);
@@ -2741,63 +2786,63 @@
         try {
             if (dialogNum === 1) {
                 console.log('[dialogBox] transforming Dashboard for hWnd', hWnd);
-                transformDashboard(win);
+                transformDashboard(win, hWnd);
             } else if (dialogNum === 2) {
-                transformAbout(win);
+                transformAbout(win, hWnd);
             } else if (dialogNum === 10 || dialogNum === 11) {
-                transformScuola(win);
+                transformScuola(win, hWnd);
             } else if (dialogNum === 88) {
-                transformTabacchi(win);
+                transformTabacchi(win, hWnd);
             } else if (dialogNum === 8) {
-                transformNegoziMenu(win);
+                transformNegoziMenu(win, hWnd);
             } else if (dialogNum >= 80 && dialogNum <= 86) {
-                transformShop(win);
+                transformShop(win, hWnd);
             } else if (dialogNum === 7) {
-                transformScooter(win);
+                transformScooter(win, hWnd);
             } else if (dialogNum === 73) {
-                transformTruccaScooter(win);
+                transformTruccaScooter(win, hWnd);
             } else if (dialogNum >= 74 && dialogNum <= 79) {
-                transformScooterShowroom(win);
+                transformScooterShowroom(win, hWnd);
             } else if (dialogNum >= 70 && dialogNum <= 72) {
-                transformScooterShop(win);
+                transformScooterShop(win, hWnd);
             } else if (dialogNum === 4) {
-                transformDisco(win);
+                transformDisco(win, hWnd);
             } else if (dialogNum === 13) {
-                transformLavoro(win);
+                transformLavoro(win, hWnd);
             } else if (dialogNum >= 390 && dialogNum <= 397) {
-                transformJobOffer(win);
+                transformJobOffer(win, hWnd);
             } else if (dialogNum >= 200 && dialogNum <= 209) {
-                transformJobQuiz(win);
+                transformJobQuiz(win, hWnd);
             } else if (dialogNum === 210) {
-                transformCompanyList(win);
+                transformCompanyList(win, hWnd);
             } else if (dialogNum >= 290 && dialogNum <= 297) {
-                transformCompanyInfo(win);
+                transformCompanyInfo(win, hWnd);
             } else if (dialogNum === 5) {
-                transformFamiglia(win);
+                transformFamiglia(win, hWnd);
             } else if (dialogNum === 6) {
-                transformCompagnia(win);
+                transformCompagnia(win, hWnd);
             } else if (dialogNum === 9 || dialogNum === 190) {
-                transformTipa(win);
+                transformTipa(win, hWnd);
             } else if (dialogNum === 91 || dialogNum === 191) {
-                transformCercaTipa(win);
+                transformCercaTipa(win, hWnd);
             } else if (dialogNum === 92 || dialogNum === 192) {
-                transformDueDonne(win);
+                transformDueDonne(win, hWnd);
             } else if (dialogNum === 95) {
-                transformDueDiPicche(win);
+                transformDueDiPicche(win, hWnd);
             } else if (dialogNum >= 93 && dialogNum <= 94) {
-                transformDate(win);
+                transformDate(win, hWnd);
             } else if (dialogNum === 89) {
-                transformPalestra(win);
+                transformPalestra(win, hWnd);
             } else if (dialogNum === 110) {
-                transformPagella(win);
+                transformPagella(win, hWnd);
             } else if ((dialogNum >= 100 && dialogNum <= 107) || dialogNum === 96) {
-                transformEventBeatdown(win);
+                transformEventBeatdown(win, hWnd);
             } else if (dialogNum === 16) {
-                transformExitSession(win);
+                transformExitSession(win, hWnd);
             } else if (dialogNum === 12) {
-                transformSplash(win);
+                transformSplash(win, hWnd);
             } else {
-                transformGeneric(win);
+                transformGeneric(win, hWnd);
             }
         } catch (err) {
             console.error('[dialogBox] Error transforming dialog ' + dialogNum + ':', err);
@@ -2965,10 +3010,12 @@
     }
 
     let _gameStarted = false;
+    let _desktopIconAdded = false;
+
     function startGame() {
         if (_gameStarted) return;
         _gameStarted = true;
-        console.log('[Tabboz] Launching WinMainStartup...');
+        console.log('[Tabboz] Starting game engine...');
 
         function tryLaunch(attemptsLeft) {
             const startupFn = (typeof _WinMainStartup === 'function') 
@@ -2977,6 +3024,7 @@
 
             if (startupFn) {
                 try {
+                    console.log('[Tabboz] Executing _WinMainStartup()');
                     startupFn();
                     return;
                 } catch (e) {
@@ -2987,16 +3035,21 @@
             if (attemptsLeft > 0) {
                 setTimeout(() => tryLaunch(attemptsLeft - 1), 100);
             } else {
-                console.error('[Tabboz] Fatal: Could not launch WinMainStartup after multiple retries.');
+                console.error('[Tabboz] Fatal: Could not launch WinMainStartup after retries.');
+                const loadingScreen = document.getElementById('loading-screen');
+                if (loadingScreen) loadingScreen.remove();
             }
         }
 
-        setTimeout(() => tryLaunch(30), 50);
+        setTimeout(() => tryLaunch(50), 50);
     }
 
     function addDesktopIcon(name, icon, title) {
-        console.log('[Tabboz] System initialized by main(). Launching WinMainStartup...');
-        startGame();
+        console.log('[Tabboz] addDesktopIcon called by C runtime. Scheduling game start.');
+        _desktopIconAdded = true;
+        setTimeout(() => {
+            startGame();
+        }, 10);
     }
     function makeDraggable(element) {}
 

@@ -16,7 +16,7 @@
     <link rel="icon" type="image/x-icon" href="../resources/icons/1.ico">
     <link rel="stylesheet" href="../resources/css/98.css">
     <link rel="stylesheet" href="../resources/css/novantotto.css">
-    <link rel="stylesheet" href="css/mobile.css?v=24">
+    <link rel="stylesheet" href="css/mobile.css?v=25">
     <title>Tabboz Mobile</title>
 </head>
 <body>
@@ -31,8 +31,8 @@
 
     <button class="save-manager-floating-btn" onclick="SaveManager.openModal()" title="Gestione Salvataggi">💾 Salvataggi</button>
     <div class="screen" id="screen"></div>
-    <script src="js/mobile-bridge.js?v=24"></script>
-    <script src="js/save-manager.js?v=24"></script>
+    <script src="js/mobile-bridge.js?v=25"></script>
+    <script src="js/save-manager.js?v=25"></script>
     <script type="text/javascript">
     var Module = {
         locateFile: function(path, prefix) {
@@ -50,7 +50,16 @@
         printErr: (text) => console.error(text),
     };
 
+    // Safety timeout: Ensure loading screen never blocks indefinitely
+    setTimeout(function() {
+        var ls = document.getElementById('loading-screen');
+        if (ls) {
+            ls.style.opacity = '0';
+            ls.style.transition = 'opacity 0.5s ease';
+            setTimeout(function() { if (ls.parentNode) ls.remove(); }, 500);
+        }
+    }, 6000);
     </script>
-    <script type="text/javascript" src="../zarrosim.js?v=24"></script>
+    <script type="text/javascript" src="../zarrosim.js?v=25"></script>
 </body>
 </html>
