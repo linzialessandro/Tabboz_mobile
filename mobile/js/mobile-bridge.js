@@ -2920,7 +2920,16 @@
         document.getElementById('screen').appendChild(element);
     }
 
-    function addDesktopIcon(name, icon, title) {}
+    function addDesktopIcon(name, icon, title) {
+        console.log('[Tabboz] System initialized by main(). Launching WinMainStartup...');
+        setTimeout(() => {
+            if (typeof _WinMainStartup === 'function') {
+                _WinMainStartup();
+            } else if (typeof Module !== 'undefined' && typeof Module._WinMainStartup === 'function') {
+                Module._WinMainStartup();
+            }
+        }, 10);
+    }
     function makeDraggable(element) {}
 
     // =========================================================================
