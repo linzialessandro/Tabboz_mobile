@@ -12,7 +12,7 @@
     <link rel="icon" type="image/x-icon" href="../resources/icons/1.ico">
     <link rel="stylesheet" href="../resources/css/98.css">
     <link rel="stylesheet" href="../resources/css/novantotto.css">
-    <link rel="stylesheet" href="css/mobile.css?v=13">
+    <link rel="stylesheet" href="css/mobile.css?v=15">
     <title>Tabboz Mobile</title>
 </head>
 <body>
@@ -27,8 +27,8 @@
 
     <button class="save-manager-floating-btn" onclick="SaveManager.openModal()" title="Gestione Salvataggi">💾 Salvataggi</button>
     <div class="screen" id="screen"></div>
-    <script src="js/mobile-bridge.js?v=14"></script>
-    <script src="js/save-manager.js?v=14"></script>
+    <script src="js/mobile-bridge.js?v=15"></script>
+    <script src="js/save-manager.js?v=15"></script>
     <script type="text/javascript">
     var Module = {
         locateFile: function(path, prefix) {
@@ -39,24 +39,25 @@
         },
         onRuntimeInitialized: function() {
             console.log('[Tabboz] Runtime initialized. Starting WinMain...');
-            setTimeout(() => {
-                if (typeof _WinMainStartup === 'function') {
-                    _WinMainStartup();
-                } else if (typeof Module._WinMainStartup === 'function') {
-                    Module._WinMainStartup();
-                }
-            }, 50);
+            if (typeof _WinMainStartup === 'function') {
+                _WinMainStartup();
+            } else if (typeof Module._WinMainStartup === 'function') {
+                Module._WinMainStartup();
+            }
         },
         print: (text) => console.log(text),
         printErr: (text) => console.error(text),
     };
 
+    // Clean up any stale service workers from previous versions
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('service-worker.js').then(reg => {
-            reg.update();
-        }).catch(err => console.warn('SW registration:', err));
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+            for (let registration of registrations) {
+                registration.unregister();
+            }
+        });
     }
     </script>
-    <script async type="text/javascript" src="../zarrosim.js"></script>
+    <script type="text/javascript" src="../zarrosim.js?v=15"></script>
 </body>
 </html>
