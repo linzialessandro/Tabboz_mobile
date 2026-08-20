@@ -543,12 +543,9 @@
         el.style.position = 'static';
         el.style.left = 'auto';
         el.style.top = 'auto';
-        el.style.right = 'auto';
-        el.style.bottom = 'auto';
         el.style.width = 'auto';
         el.style.height = 'auto';
         el.style.margin = '0';
-        el.classList.add('mobile-reset');
     }
 
     function getButtonOk(body) {
@@ -1661,18 +1658,18 @@
         const img = body.querySelector('img.control202') || body.querySelector('img');
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-splash-view';
-        container.classList.add('splash-container');
+        container.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 80vh; gap: 24px; cursor: pointer; text-align: center;';
 
         if (img) {
             resetElement(img);
-            img.classList.add('splash-image');
+            img.style.cssText = 'max-width: 90%; max-height: 55vh; object-fit: contain; border-radius: 16px; box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4); background: #ffffff; cursor: pointer;';
             container.appendChild(img);
         }
 
         const startBtn = document.createElement('button');
         startBtn.className = 'dlg_item control202 mobile-btn primary';
         startBtn.setAttribute('data-class', 'BorBtn');
-        startBtn.classList.add('splash-start-btn');
+        startBtn.style.cssText = 'font-size: 18px; font-weight: 800; padding: 16px 32px; border-radius: 14px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3); width: 85%; max-width: 320px; cursor: pointer;';
         startBtn.innerHTML = '⚡ TOCCA PER GIOCARE ⚡';
         container.appendChild(startBtn);
 
@@ -1975,7 +1972,13 @@
 
         if (img) {
             resetElement(img);
-            img.classList.add('event-hero-img');
+            img.style.setProperty('width', 'auto', 'important');
+            img.style.setProperty('height', 'auto', 'important');
+            img.style.setProperty('max-width', '100%', 'important');
+            img.style.setProperty('max-height', '260px', 'important');
+            img.style.setProperty('object-fit', 'contain', 'important');
+            img.style.setProperty('display', 'block', 'important');
+            img.style.setProperty('margin', '0 auto', 'important');
             const card = document.createElement('div');
             card.className = 'event-hero-card';
             card.appendChild(img);
