@@ -1,0 +1,330 @@
+/* Tabboz Mobile — lavoro, quiz, companies, job offers */
+/* Lavoro (Job) Modern View */
+.lavoro-hero-card {
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+    border: 2px solid #b0c2c2;
+}
+
+.lavoro-hero-card img,
+.lavoro-hero-card canvas {
+    width: 100% !important;
+    max-height: 180px !important;
+    object-fit: cover !important;
+}
+
+.famiglia-actions-list,
+.compagnia-actions-list,
+.lavoro-actions-list,
+.palestra-actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.famiglia-actions-list button,
+.compagnia-actions-list button,
+.lavoro-actions-list button,
+.palestra-actions-list button {
+    width: 100% !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    color: #1f2937 !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+}
+
+
+/* Job Offer Modern View (390-397) */
+.job-hero-card,
+.company-hero-card,
+.event-hero-card,
+.date-hero-card,
+.phone-hero-card {
+    width: 100%;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+}
+
+.job-hero-card img,
+.company-hero-card img,
+.event-hero-card img,
+.event-hero-card canvas,
+.date-hero-card img,
+.date-hero-card canvas,
+.phone-hero-card img,
+.phone-hero-card canvas {
+    width: auto !important;
+    max-width: 100% !important;
+    max-height: 260px !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin: 0 auto !important;
+    border-radius: 8px !important;
+}
+
+.job-offer-desc-card,
+.company-info-card,
+.event-desc-card,
+.date-info-card,
+.scooter-desc-card,
+.phone-desc-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 16px 18px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: #1f2937;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+}
+
+.event-location-badge {
+    background: #e0f2fe !important;
+    color: #0369a1 !important;
+    font-weight: 800 !important;
+    font-size: 16px !important;
+    padding: 6px 14px !important;
+    border-radius: 8px !important;
+    display: inline-block !important;
+    margin: 6px auto !important;
+    border: 1px solid #bae6fd !important;
+    text-align: center !important;
+}
+
+
+/* Job Quiz Modern View (200-209) */
+.mobile-quiz-view {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    padding: 12px 14px 32px 14px !important;
+    width: 100% !important;
+}
+
+.quiz-header-badge {
+    background: #e0f2fe !important;
+    color: #0369a1 !important;
+    border: 1px solid #bae6fd !important;
+    padding: 6px 14px !important;
+    border-radius: 20px !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    align-self: flex-start !important;
+    margin-bottom: 6px !important;
+}
+
+.quiz-intro-card {
+    background: #f0fdfa !important;
+    border: 1.5px solid #99f6e4 !important;
+    border-radius: 12px !important;
+    padding: 14px 16px !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+    color: #115e59 !important;
+    font-weight: 600 !important;
+    font-style: italic !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+}
+
+.quiz-intro-text {
+    font-size: 13px !important;
+    color: #0f766e !important;
+    line-height: 1.5 !important;
+}
+
+.quiz-question-card {
+    background: #ffffff !important;
+    border-radius: 14px !important;
+    padding: 14px 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+.quiz-question-header {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+}
+
+.quiz-question-badge {
+    background: #008080 !important;
+    color: #ffffff !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    padding: 4px 8px !important;
+    border-radius: 6px !important;
+    letter-spacing: 0.5px !important;
+    flex-shrink: 0 !important;
+    margin-top: 1px !important;
+}
+
+.quiz-question-title {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    color: #1f2937 !important;
+    line-height: 1.45 !important;
+}
+
+.quiz-options-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+
+.quiz-option-card {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 12px 14px !important;
+    border-radius: 10px !important;
+    background: #f8fafc !important;
+    border: 1.5px solid #e2e8f0 !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #1f2937 !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    transition: all 0.12s ease !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    min-height: 48px !important;
+    box-sizing: border-box !important;
+}
+
+.quiz-option-card:active {
+    transform: scale(0.98) !important;
+    filter: brightness(0.96) !important;
+}
+
+.quiz-option-card.selected {
+    background: #f0fdfa !important;
+    border-color: #008080 !important;
+    color: #005959 !important;
+    box-shadow: 0 2px 8px rgba(0, 128, 128, 0.15) !important;
+}
+
+.quiz-check-indicator {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
+    border-radius: 6px !important;
+    border: 2px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 13px !important;
+    font-weight: 900 !important;
+    color: transparent !important;
+    transition: all 0.12s ease !important;
+    flex-shrink: 0 !important;
+}
+
+.quiz-option-card.selected .quiz-check-indicator {
+    background: #008080 !important;
+    border-color: #008080 !important;
+    color: #ffffff !important;
+}
+
+.quiz-option-card.selected .quiz-check-indicator::after {
+    content: "✓";
+}
+
+.quiz-option-card input[type="checkbox"] {
+    display: none !important;
+}
+
+.quiz-option-text {
+    flex: 1 !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    cursor: pointer !important;
+    margin: 0 !important;
+}
+
+.quiz-submit-btn {
+    width: 100% !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    border-radius: 12px !important;
+}
+
+/* Company List Modern View (210) */
+.company-buttons-list,
+.date-actions-list,
+.scooter-shop-actions-list,
+.phone-actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.company-buttons-list button,
+.date-actions-list button,
+.scooter-shop-actions-list button,
+.phone-actions-list button {
+    width: 100% !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    color: #1f2937 !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0 16px !important;
+}
+
+.company-buttons-list button .btn-icon {
+    font-size: 20px;
+}
+
+.company-buttons-list button .btn-text {
+    flex: 1;
+    text-align: left;
+    margin-left: 10px;
+}
+
+.company-buttons-list button .btn-chevron {
+    font-size: 18px;
+    color: #9ca3af;
+}
+
+

@@ -1,5 +1,6 @@
 /* Tabboz Mobile service worker — network-first for code, cache-first for media. */
-const VERSION = '31';
+importScripts('./js/version.js');
+const VERSION = self.TabbozMobile.ASSET_VERSION;
 const CACHE_NAME = 'tabboz-mobile-' + VERSION;
 
 self.addEventListener('install', (event) => {

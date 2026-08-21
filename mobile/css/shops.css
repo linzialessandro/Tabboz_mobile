@@ -1,0 +1,596 @@
+/* Tabboz Mobile — negozi, boutiques, tabacchi, palestra, scooter */
+/* Tabacchi Modern View */
+.tabacchi-msg-banner {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334d4d;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.tabacchi-packs-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    width: 100%;
+    background: #ffffff;
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    box-sizing: border-box;
+}
+
+.pack-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    transition: transform 0.1s ease, border-color 0.1s ease;
+}
+
+.pack-card img {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 60px !important;
+    object-fit: contain !important;
+}
+
+.pack-card:active {
+    transform: scale(0.94);
+    border-color: #008080;
+}
+
+/* Negozi Menu List */
+.negozi-buttons-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.negozi-buttons-list button {
+    width: 100% !important;
+    height: 54px !important;
+    min-height: 54px !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    color: #1f2937 !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0 16px !important;
+}
+
+.negozi-buttons-list button .btn-icon {
+    font-size: 22px;
+}
+
+.negozi-buttons-list button .btn-text {
+    flex: 1;
+    text-align: left;
+    margin-left: 12px;
+}
+
+.negozi-buttons-list button .btn-chevron {
+    font-size: 20px;
+    color: #9ca3af;
+}
+
+/* Scooter Modern View */
+.scooter-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    width: 100%;
+}
+
+.scooter-actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    margin-top: 6px;
+}
+
+.scooter-actions-list button {
+    width: 100% !important;
+    height: 50px !important;
+    min-height: 50px !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    color: #005a5a !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    border: 1px solid #c2d1d1 !important;
+}
+
+/* Shop / Boutiques Modern View */
+.shop-products-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.shop-product-card {
+    display: flex;
+    gap: 12px;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 12px;
+    border: 2px solid transparent;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    cursor: pointer;
+    align-items: center;
+    transition: all 0.15s ease;
+}
+
+.shop-product-card.selected {
+    background: #e6f7f7;
+    border-color: #008080;
+    box-shadow: 0 2px 10px rgba(0, 128, 128, 0.2);
+}
+
+.shop-product-card img {
+    width: 90px !important;
+    height: 80px !important;
+    max-width: 90px !important;
+    object-fit: contain !important;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.shop-product-card .product-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 6px;
+}
+
+.product-radio-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #004d4d;
+}
+
+.product-desc {
+    font-size: 13px;
+    line-height: 1.35;
+    color: #4b5563;
+}
+
+
+/* ==========================================================================
+   PALESTRA (Gym) Modern View
+   ========================================================================== */
+.mobile-palestra-view {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    padding: 12px 14px 32px 14px !important;
+}
+
+.palestra-stats-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+
+.palestra-stat-card {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 10px 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid #e2e8f0 !important;
+    min-height: 52px !important;
+}
+
+.palestra-stat-card.stat-soldi {
+    background: #fefce8 !important;
+    border-color: #fef08a !important;
+}
+
+.palestra-stat-card.stat-figosita {
+    background: #fdf2f8 !important;
+    border-color: #fbcfe8 !important;
+}
+
+.palestra-stat-card .stat-icon {
+    font-size: 22px !important;
+    line-height: 1 !important;
+}
+
+.palestra-stat-card small {
+    font-size: 10px !important;
+    text-transform: uppercase !important;
+    font-weight: 800 !important;
+    color: #6b7280 !important;
+    display: block !important;
+    letter-spacing: 0.5px !important;
+}
+
+.palestra-stat-card .dlg_item {
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    color: #111827 !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    width: auto !important;
+    height: auto !important;
+    text-align: left !important;
+}
+
+.palestra-stat-card.stat-soldi .dlg_item {
+    color: #854d0e !important;
+}
+
+.palestra-stat-card.stat-figosita .dlg_item {
+    color: #9d174d !important;
+}
+
+.palestra-hero-card {
+    width: 100% !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+    display: flex !important;
+    justify-content: center !important;
+    border: 2px solid #b0c2c2 !important;
+}
+
+.palestra-hero-card img {
+    width: 100% !important;
+    max-height: 180px !important;
+    object-fit: contain !important;
+    background: #f8fafc !important;
+}
+
+.palestra-section {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+
+.palestra-section-title {
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    color: #006666 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.palestra-workout-card {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 14px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    border: 2px solid #008080 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+}
+
+.palestra-workout-btn {
+    width: 100% !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    background: linear-gradient(135deg, #008080, #005959) !important;
+    color: #ffffff !important;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 10px rgba(0, 128, 128, 0.3) !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.palestra-card-hint {
+    font-size: 12px !important;
+    color: #6b7280 !important;
+    text-align: center !important;
+    font-weight: 600 !important;
+}
+
+.palestra-sub-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+
+.palestra-sub-card {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 14px 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 8px !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid #e2e8f0 !important;
+    position: relative !important;
+    cursor: pointer !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+.palestra-sub-card:active {
+    transform: scale(0.96) !important;
+}
+
+.palestra-sub-card.featured {
+    border: 2px solid #008080 !important;
+    background: #f0fdfa !important;
+}
+
+.sub-badge {
+    position: absolute !important;
+    top: -8px !important;
+    background: #008080 !important;
+    color: #ffffff !important;
+    font-size: 8px !important;
+    font-weight: 800 !important;
+    padding: 2px 6px !important;
+    border-radius: 6px !important;
+    letter-spacing: 0.5px !important;
+}
+
+.sub-duration {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    color: #1f2937 !important;
+}
+
+.sub-icon {
+    font-size: 24px !important;
+}
+
+.sub-price,
+.palestra-sub-card div.dlg_item,
+.palestra-sub-card span.dlg_item {
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    color: #008080 !important;
+    min-height: 18px !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 2px 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    text-align: center !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+.sub-btn {
+    width: 100% !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 8px !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-top: 4px !important;
+    border: 2px solid #008080 !important;
+    background: #ffffff !important;
+    color: #004d4d !important;
+    transition: all 0.15s ease !important;
+}
+
+.sub-btn:active,
+.palestra-sub-card:active .sub-btn {
+    background: #008080 !important;
+    color: #ffffff !important;
+}
+
+.palestra-sub-card.featured .sub-btn {
+    background: #008080 !important;
+    color: #ffffff !important;
+}
+
+.palestra-sub-card.featured .sub-btn:active,
+.palestra-sub-card.featured:active .sub-btn {
+    background: #004d4d !important;
+}
+
+.palestra-lampada-card {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 14px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid #e2e8f0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+}
+
+.lampada-info {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+}
+
+.lampada-title {
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    color: #1f2937 !important;
+}
+
+.lampada-desc {
+    font-size: 12px !important;
+    color: #6b7280 !important;
+}
+
+.lampada-price,
+.palestra-lampada-card .dlg_item.control123 {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    color: #b45309 !important;
+    margin-top: 4px !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+.lampada-btn {
+    width: 100% !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    background: #fef3c7 !important;
+    color: #92400e !important;
+    border: 1px solid #fde68a !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+
+/* Scooter Showroom & Tuning Modern Views (73-79) */
+.scooter-models-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+    width: 100%;
+}
+
+.scooter-model-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    border: 2px solid #e2e8f0;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    transition: all 0.2s ease;
+}
+
+.scooter-model-card.selected {
+    border-color: #007a78;
+    background: #e6f7f7;
+    box-shadow: 0 0 0 2px rgba(0, 122, 120, 0.3);
+}
+
+.scooter-model-card img {
+    width: 100% !important;
+    height: 70px !important;
+    object-fit: contain !important;
+}
+
+.scooter-model-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1f2937;
+    text-align: center;
+}
+
+.scooter-specs-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.specs-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 800;
+    color: #005a5a;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 6px;
+}
+
+.specs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+}
+
+.spec-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4b5563;
+    background: #f8fafc;
+    padding: 6px 10px;
+    border-radius: 8px;
+}
+
+.spec-row.spec-costo {
+    grid-column: 1 / -1;
+    background: #fef3c7;
+    color: #92400e;
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.scooter-tuning-actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.scooter-tuning-actions-list button {
+    width: 100% !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    color: #1f2937 !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0 16px !important;
+}
+
+

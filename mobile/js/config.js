@@ -7,7 +7,6 @@
 ((TM) => {
     'use strict';
 
-    TM.ASSET_VERSION = '31';
     TM.RESOURCE_BASE = '../resources';
     TM.WASM_URL = '../zarrosim.wasm';
     TM.WASM_JS_URL = '../zarrosim.js';

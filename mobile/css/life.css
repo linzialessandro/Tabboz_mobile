@@ -1,0 +1,421 @@
+/* Tabboz Mobile — scuola, disco, famiglia, compagnia, tipa */
+/* Scuola Modern View */
+.scuola-hero-card {
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+    border: 2px solid #b0c2c2;
+}
+
+.scuola-hero-card canvas,
+.scuola-hero-card img {
+    width: 100% !important;
+    max-height: 180px !important;
+    object-fit: cover !important;
+}
+
+.scuola-subject-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.scuola-subject-card {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 2px solid transparent;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.scuola-subject-card.selected {
+    background: #e6f7f7 !important;
+    border-color: #008080 !important;
+    box-shadow: 0 2px 8px rgba(0, 128, 128, 0.18);
+}
+
+.scuola-subject-card .subject-name {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1f2937;
+    cursor: pointer;
+}
+
+.scuola-subject-card.selected .subject-name {
+    color: #005a5a;
+}
+
+.scuola-subject-card .subject-grade-badge {
+    font-size: 14px;
+    font-weight: 800;
+    color: #004d4d;
+    background: #ffffff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.mobile-actions-drawer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.mobile-actions-drawer button {
+    width: 100% !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    border-radius: 10px !important;
+}
+
+.btn-scuola-action {
+    background: #ffffff !important;
+    color: #004d4d !important;
+    border: 1.5px solid #99c2c2 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+.btn-scuola-action:active {
+    background: #e2eeee !important;
+    transform: scale(0.97);
+}
+
+.btn-studia {
+    background: linear-gradient(135deg, #ffffff 0%, #edf7f7 100%) !important;
+    font-weight: 800 !important;
+}
+
+
+/* Disco Modern View */
+.disco-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    width: 100%;
+}
+
+.disco-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    border: 2px solid transparent;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1f2937;
+    transition: all 0.15s ease;
+}
+
+.disco-card.selected {
+    background: #e6f7f7;
+    border-color: #008080;
+    color: #005a5a;
+}
+
+.disco-desc-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 1.45;
+    color: #374151;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    min-height: 60px;
+}
+
+/* Famiglia & Compagnia Modern Views */
+.famiglia-actions-list,
+.compagnia-actions-list,
+.tipa-actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.famiglia-actions-list button,
+.compagnia-actions-list button,
+.tipa-actions-list button {
+    width: 100% !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    color: #1f2937 !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+}
+
+.compagnia-hero-card,
+.tipa-hero-card {
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+    border: 2px solid #b0c2c2;
+}
+
+.compagnia-hero-card img,
+.tipa-hero-card canvas {
+    width: 100% !important;
+    max-height: 200px !important;
+    object-fit: cover !important;
+}
+
+.btn-danger {
+    color: #b91c1c !important;
+    border-color: #fca5a5 !important;
+}
+
+
+/* Pagella Modern View (110) */
+.mobile-pagella-view {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    padding: 12px 14px 32px 14px !important;
+    width: 100% !important;
+}
+
+.pagella-result-card {
+    background: #f0fdfa !important;
+    border: 1.5px solid #99f6e4 !important;
+    border-radius: 12px !important;
+    padding: 14px 16px !important;
+    text-align: center !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+}
+
+.pagella-result-label {
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    color: #0f766e !important;
+    text-transform: uppercase !important;
+    margin-bottom: 4px !important;
+}
+
+.pagella-result-text {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #115e59 !important;
+}
+
+.pagella-grades-card {
+    background: #ffffff !important;
+    border-radius: 14px !important;
+    padding: 12px 16px !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid #e2e8f0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+}
+
+.pagella-grade-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 8px 10px !important;
+    border-radius: 8px !important;
+    background: #f8fafc !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #1f2937 !important;
+}
+
+.pagella-subject-name {
+    flex: 1 !important;
+}
+
+.pagella-grade-val {
+    font-weight: 800 !important;
+    font-size: 15px !important;
+    color: #008080 !important;
+    background: #e0f2fe !important;
+    padding: 2px 10px !important;
+    border-radius: 6px !important;
+}
+
+
+/* Cerca Tipa & Date Outcome Views (91-96, 191-192) */
+.cerca-tipa-hero-card,
+.picche-hero-card {
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+    border: 2px solid #b0c2c2;
+}
+
+.cerca-tipa-hero-card img,
+.cerca-tipa-hero-card canvas {
+    width: 100% !important;
+    max-height: 220px !important;
+    object-fit: contain !important;
+    background: #f8fafc;
+}
+
+.picche-header-badge {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.picche-hero-card {
+    width: 100%;
+    max-width: 220px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+    border: 2px solid #fca5a5;
+    padding: 10px;
+}
+
+.picche-hero-card img {
+    max-height: 150px !important;
+    object-fit: contain !important;
+}
+
+.cerca-tipa-stats-card,
+.due-donne-desc-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.picche-desc-card {
+    width: 100%;
+    background: #fff5f5;
+    border-radius: 12px;
+    padding: 16px;
+    border-left: 5px solid #ef4444;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+}
+
+.picche-quote-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: #991b1b;
+}
+
+.picche-quote-text {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #1f2937 !important;
+    line-height: 1.5 !important;
+    font-style: italic !important;
+}
+
+.picche-action-btn {
+    width: 100% !important;
+    height: 52px !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    background: #dc2626 !important;
+    color: #ffffff !important;
+    border-radius: 12px !important;
+}
+
+.tipa-stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1f2937;
+    background: #fdf2f8;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #fbcfe8;
+}
+
+.due-donne-header-card {
+    text-align: center;
+    padding: 6px 0;
+}
+
+.due-donne-badge {
+    display: inline-block;
+    background: #fef3c7;
+    color: #92400e;
+    font-weight: 800;
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid #fde68a;
+    letter-spacing: 0.5px;
+}
+
+.due-donne-actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.due-donne-actions-list button {
+    width: 100% !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    color: #1f2937 !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+}
+
+
