@@ -17,8 +17,24 @@ La versione Mobile è accessibile direttamente su:
 Mantiene intatto al 100% l'engine di gioco originale C/WebAssembly e la sua logica Win32, trasformando l'interfaccia in un'esperienza touch-friendly, fluida e installabile come Progressive Web App (PWA) con:
 - Interfaccia ottimizzata per schermi verticali / smartphone
 - Gestione salvataggi multi-slot su LocalStorage con export/import file `.tabboz`
-- Supporto offline completo via Service Worker
+- Supporto offline via Service Worker (network-first per il codice, cache-first per i media)
 - Piena fedeltà a tutte le feature del gioco originale (Scuola, Negozi, Bar Tabacchi, Scooter, Tuning, Disco, Tipa, Famiglia, Compagnia)
+
+La versione desktop originale di questo fork è in [`desktop.html`](desktop.html). L'architettura del layer mobile è descritta in [`mobile/README.md`](mobile/README.md).
+
+### 🧪 Sviluppo locale
+
+```shell
+python3 server.py
+```
+
+Poi apri http://localhost:8080/mobile/ (PWA) oppure http://localhost:8080/desktop.html (emulatore originale).
+
+Validazione salvataggi:
+
+```shell
+node mobile/js/save-manager.test.js
+```
 
 ## 🖥️ Web development
 
@@ -68,5 +84,5 @@ make format
 This fork remains distributed under GPL-3.0, as supplied in
 [`LICENSE`](LICENSE). The mobile bridge adapts the original Novantotto bridge,
 which is available under MPL-2.0; its source notice is retained in
-[`mobile/js/mobile-bridge.js`](mobile/js/mobile-bridge.js). Original authorship
+[`mobile/js/win32-bridge.js`](mobile/js/win32-bridge.js). Original authorship
 and the upstream project are credited throughout the source.

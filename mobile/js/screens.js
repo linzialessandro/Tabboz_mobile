@@ -1,703 +1,24 @@
 /**
- * Tabboz Simulator Mobile - Mobile Bridge
+ * Tabboz Simulator Mobile - dialog transformers.
  *
- * Based on Novantotto:
- * Copyright (c) 2024 Andrea Bonomi
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ * Each function keeps the original Win32 controls alive (same class names /
+ * control IDs) and rearranges them into a mobile layout. The C engine still
+ * owns game state; these functions only change presentation.
  *
- * Tabboz Simulator:
- * Copyright (c) 1997-2001 Andrea Bonomi, Emanuele Caccialanza
- * Distributed under the terms of the GNU General Public License v3.0.
+ * Register new dialogs in `TM.resolveTransformer` rather than adding
+ * another if/else in the Win32 bridge.
  */
-
-((exports) => {
-    // =========================================================================
-    // Global State (matching novantotto.js exact contracts)
-    // =========================================================================
-    window.strings = window.strings || {};
-    exports.strings = window.strings;
-
-    let _resolve = null;
-    let _activeWindowHwnd = null;
-
-    // =========================================================================
-    // Win32 Constants
-    // =========================================================================
-    const SM_CXSCREEN = 0;
-    const SM_CYSCREEN = 1;
-    const VK_ESCAPE = 0x1B;
-    const WM_KEYDOWN = 0x100;
-    const WM_COMMAND = 0x0111;
-    const CW_USEDEFAULT = 0x8000;
-    const CW_SKIPRESIZE = 0x8888;
-
-    const RESOURCE_BASE = '../resources';
-
-    // In-memory resource caches to eliminate network latency & mid-game async hangs
-    const _dialogTemplateCache = new Map();
-    let _stringsCache = null;
-    let _bitmapsListCache = null;
-
-    const KNOWN_DIALOGS = [
-        1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
-        70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
-        80, 81, 82, 83, 84, 85, 86, 88, 89,
-        91, 92, 95, 96,
-        100, 101, 102, 103, 104, 105, 106, 107, 110,
-        120, 121, 123, 190, 191, 192,
-        200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210,
-        290, 291, 292, 293, 294, 295, 296, 297,
-        390, 391, 392, 393, 394, 395, 396, 397
-    ];
-
-    function eagerPreloadAllResources() {
-        // 1. Strings
-        fetch(`${RESOURCE_BASE}/strings/strings.json`)
-            .then(res => res.ok ? res.json() : {})
-            .then(data => {
-                _stringsCache = data;
-                window.strings = data;
-                exports.strings = data;
-            })
-            .catch(err => console.warn('[Preload] strings.json eager fetch failed:', err));
-
-        // 2. Bitmaps list
-        fetch(`${RESOURCE_BASE}/bitmaps/list.json`)
-            .then(res => res.ok ? res.json() : [])
-            .then(json => {
-                _bitmapsListCache = Array.isArray(json) ? json : (json.data || []);
-                _bitmapsListCache.forEach(element => {
-                    const img = new Image();
-                    img.src = `${RESOURCE_BASE}/bitmaps/${element}`;
-                });
-            })
-            .catch(err => console.warn('[Preload] bitmaps list eager fetch failed:', err));
-
-        // 3. All Dialog Templates in parallel
-        KNOWN_DIALOGS.forEach(dialogId => {
-            fetch(`${RESOURCE_BASE}/dialogs/includes/${dialogId}.inc.html`)
-                .then(res => res.ok ? res.text() : null)
-                .then(html => {
-                    if (html) _dialogTemplateCache.set(Number(dialogId), html);
-                })
-                .catch(() => {});
-        });
-    }
-    // Launch eager preloading immediately upon script execution
-    try {
-        eagerPreloadAllResources();
-    } catch (e) {
-        console.warn('[Preload] eagerPreloadAllResources initialization error:', e);
-    }
-
-    // Dialog IDs (mapped from zarrosim.h / resource.h)
-    const DLG = {
-        DASHBOARD: 1,
-        ABOUT: 2,
-        DISCO: 4,
-        FAMIGLIA: 5,
-        COMPAGNIA: 6,
-        SCOOTER: 7,
-        NEGOZI_MENU: 8,
-        TIPA: 9,
-        TIPA_ALT: 190,
-        SCUOLA: 10,
-        SCUOLA_ALT: 11,
-        SPLASH: 12,
-        LAVORO: 13,
-        EXIT_SESSION: 16,
-        SCOOTER_SHOP_MIN: 70,
-        SCOOTER_SHOP_MAX: 72,
-        TRUCCA_SCOOTER: 73,
-        SHOWROOM_MIN: 74,
-        SHOWROOM_MAX: 79,
-        SHOP_MIN: 80,
-        SHOP_MAX: 86,
-        TABACCHI: 88,
-        PALESTRA: 89,
-        CERCA_TIPA: 91,
-        CERCA_TIPA_ALT: 191,
-        DUE_DONNE: 92,
-        DUE_DONNE_ALT: 192,
-        DATE_MIN: 93,
-        DATE_MAX: 94,
-        DUE_DI_PICCHE: 95,
-        EVENT_BEATDOWN: 96,
-        EVENTS_MIN: 100,
-        EVENTS_MAX: 107,
-        PAGELLA: 110,
-        JOB_QUIZ_MIN: 200,
-        JOB_QUIZ_MAX: 209,
-        COMPANY_LIST: 210,
-        COMPANY_INFO_MIN: 290,
-        COMPANY_INFO_MAX: 297,
-        JOB_OFFER_MIN: 390,
-        JOB_OFFER_MAX: 397
-    };
-
-    // Intercept Audio for mobile sub-directory compatibility and safe autoplay
-    const OriginalAudio = window.Audio;
-    window.Audio = function(src) {
-        if (src && typeof src === 'string' && src.startsWith('resources/')) {
-            src = '../' + src;
-        }
-        const audio = new OriginalAudio(src);
-        const origPlay = audio.play;
-        if (origPlay) {
-            audio.play = function() {
-                try {
-                    const p = origPlay.apply(this, arguments);
-                    if (p && typeof p.catch === 'function') {
-                        p.catch(() => {});
-                    }
-                    return p;
-                } catch (e) {
-                    return Promise.resolve();
-                }
-            };
-        }
-        return audio;
-    };
-    window.Audio.prototype = OriginalAudio.prototype;
-
-    function sanitizeItalianText(str) {
-        if (!str || typeof str !== 'string') return str;
-        return str
-            .replace(/\\x92/g, "'")
-            .replace(/\\x91/g, "'")
-            .replace(/\\x93/g, '"')
-            .replace(/\\x94/g, '"')
-            .replace(/\\x85/g, '...')
-            .replace(/\\x80/g, '€')
-            .replace(/\\xF9/gi, 'ù')
-            .replace(/\\xE9/gi, 'é')
-            .replace(/\\xE8/gi, 'è')
-            .replace(/\\xE0/gi, 'à')
-            .replace(/\\xF2/gi, 'ò')
-            .replace(/\\xEC/gi, 'ì')
-            .replace(/\\xB0/gi, '°')
-            .replace(/\\xA9/gi, '©')
-            .replace(/\\xAE/gi, '®')
-            .replace(/\\x([0-9A-Fa-f]{2})/g, (match, hex) => {
-                try {
-                    return String.fromCharCode(parseInt(hex, 16));
-                } catch (e) {
-                    return match;
-                }
-            });
-    }
-
-    const WINDOW_TMPL = `
-        <div class="window">
-          <div class="title-bar">
-            <div class="title-bar-text">Tabboz Simulator</div>
-            <div class="title-bar-controls">
-              <button class="control61536 close-btn" aria-label="Close">✕</button>
-            </div>
-          </div>
-          <div class="menubar"><ul class="main-menu"></ul></div>
-          <div class="window-body">
-          </div>
-        </div>`;
-
-    const MESSAGE_BOX_TMPL = `
-        <div class="window messagebox">
-          <div class="title-bar">
-            <div class="title-bar-text">Tabboz Simulator</div>
-            <div class="title-bar-controls">
-              <button class="control61536 close-btn" aria-label="Close">✕</button>
-            </div>
-          </div>
-          <div class="window-body">
-            <div class="container">
-              <img src="" class="icon" height="36" width="36" />
-              <p class="content">content</p>
-            </div>
-            <section class="field-row">
-              <button class="ok default control1 mobile-btn primary">OK</button>
-              <button class="cancel default control2 mobile-btn secondary">Annulla</button>
-              <button class="default control6 mobile-btn primary">Sì</button>
-              <button class="default control7 mobile-btn secondary">No</button>
-            </section>
-          </div>
-        </div>`;
-
-    const WALL_TMPL = `<div class="wall" id="wall"></div>`;
-    const SHUTDOWN_TMPL = `<div class="shutdown"><span>È ora possibile chiudere<br/>l'applicazione.</span></div>`;
-
-    // =========================================================================
-    // Asyncify Event Loop
-    // =========================================================================
-
-    function stopWaiting() {
-        if (_resolve) {
-            _resolve();
-            _resolve = null;
-        }
-    }
-
-    function waitEvent() {
-        return new Promise((resolve, reject) => {
-            stopWaiting();
-            _resolve = resolve;
-        });
-    }
-
-    function createElementFromHTML(html) {
-        const template = document.createElement('template');
-        template.innerHTML = html.trim();
-        const result = template.content.children;
-        return result.length === 1 ? result[0] : result;
-    }
-
-    // =========================================================================
-    // Menu System
-    // =========================================================================
-
-    function addMainMenu(mainMenuEl) {
-        if (!mainMenuEl) return;
-        mainMenuEl.querySelectorAll('li').forEach((item) => {
-            item.addEventListener('click', (event) => {
-                const classList = event.target.classList;
-                if (!classList.contains('disabled') && !classList.contains('menu') && !classList.contains('hotkey')) {
-                    mainMenuClick(item);
-                }
-            });
-        });
-
-        mainMenuEl.querySelectorAll('li > ul li').forEach((item) =>
-            item.addEventListener('click', (event) => {
-                if (item.classList.contains('disabled')) {
-                    event.preventDefault();
-                } else {
-                    closeMenu();
-                }
-            })
-        );
-
-        function mainMenuClick(el) {
-            const submenu = el.querySelector('ul');
-            if (!submenu) return;
-            const isShown = submenu.style.display === 'block';
-            closeMenu();
-            if (!isShown) {
-                el.classList.add('active-menu');
-                submenu.style.display = 'block';
-            }
-        }
-
-        function closeMenu() {
-            mainMenuEl.querySelectorAll('.active-menu').forEach((item) => {
-                item.classList.remove('active-menu');
-                const ul = item.querySelector('ul');
-                if (ul) ul.style.display = 'none';
-            });
-        }
-
-        registerMenuClickListener();
-    }
-
-    let _menuClickListenerRegistered = false;
-    function registerMenuClickListener() {
-        if (_menuClickListenerRegistered) return;
-        _menuClickListenerRegistered = true;
-        document.addEventListener('click', (event) => {
-            if (!event.target.classList.contains('active-menu') && !event.target.closest('.active-menu')) {
-                document.querySelectorAll('.active-menu').forEach((item) => {
-                    item.classList.remove('active-menu');
-                    const ul = item.querySelector('ul');
-                    if (ul) ul.style.display = 'none';
-                });
-            }
-        });
-    }
-
-    function generateMenuHTML(menuStructure) {
-        function generateMenuItemHTML(item) {
-            const label = item.label.replace('&', '');
-            let html = `<li class="${item.kind === 'separator' ? 'separator' : `menu menu${item.menu_id}`}">${label}</li>`;
-            if (item.items && item.items.length > 0) {
-                html += '<ul>';
-                for (const subItem of item.items) {
-                    html += generateMenuItemHTML(subItem);
-                }
-                html += '</ul>';
-            }
-            return html;
-        }
-
-        let html = '<ul class="main-menu">';
-        for (const menu of menuStructure) {
-            const label = menu.label.replace('&', '');
-            html += `<li>${label}`;
-            if (menu.items && menu.items.length > 0) {
-                html += '<ul>';
-                for (const item of menu.items) {
-                    html += generateMenuItemHTML(item);
-                }
-                html += '</ul>';
-            }
-            html += '</li>';
-        }
-        html += '</ul>';
-        return html;
-    }
-
-    async function addMenuToWindow(hWnd, lpMenuName) {
-        const menuName = UTF8ToString(lpMenuName);
-        const win = document.querySelector(`#win${hWnd}`);
-        if (win != null) {
-            try {
-                const response = await fetch(`${RESOURCE_BASE}/menus/${menuName}.json`);
-                const menu = await response.json();
-                const menubar = win.querySelector('.menubar');
-                if (menubar) {
-                    menubar.innerHTML = generateMenuHTML(menu);
-                    addMainMenu(win);
-                }
-            } catch (e) {
-                console.warn("Could not load menu:", menuName, e);
-            }
-        }
-    }
-
-    // =========================================================================
-    // Window Management
-    // =========================================================================
-
-    let _highestZIndex = 50;
-
-    function setActiveWindow(hWnd) {
-        console.log('[setActiveWindow] setting active window:', hWnd);
-        _activeWindowHwnd = hWnd;
-        _highestZIndex += 10;
-        const activeWin = document.querySelector(`#win${hWnd}`);
-        if (!activeWin) return;
-
-        const isMsgBox = activeWin.classList.contains("messagebox");
-
-        // Find the topmost non-messagebox window
-        const nonMsgWindows = Array.from(document.querySelectorAll(".window:not(.messagebox)"));
-        const topRegularWin = nonMsgWindows.length > 0 ? nonMsgWindows[nonMsgWindows.length - 1] : null;
-
-        document.querySelectorAll(".window").forEach(w => {
-            if (w === activeWin) {
-                w.classList.add("active-window");
-                w.style.zIndex = _highestZIndex;
-                w.style.display = isMsgBox ? 'block' : 'flex';
-                const tb = w.querySelector(".title-bar");
-                if (tb) tb.classList.remove("inactive");
-            } else if (isMsgBox && w === topRegularWin) {
-                // Keep parent dialog visible underneath modal alert
-                w.style.display = 'flex';
-                const tb = w.querySelector(".title-bar");
-                if (tb) tb.classList.add("inactive");
-            } else if (!w.classList.contains("messagebox")) {
-                w.classList.remove("active-window");
-                w.style.display = 'none';
-            }
-        });
-    }
-
-    function showWindow(hWnd, show) {
-        const win = document.querySelector('#win' + hWnd);
-        const wall = document.querySelector('#wall' + hWnd);
-        if (win != null) {
-            const isMsgBox = win.classList.contains("messagebox");
-            win.style.display = show ? (isMsgBox ? 'block' : 'flex') : 'none';
-            if (wall != null) wall.style.display = show ? 'block' : 'none';
-            return true;
-        }
-        return false;
-    }
-
-    function showApp(show) {
-        document.querySelectorAll('.window, .wall').forEach((item) => {
-            item.style.display = show ? 'block' : 'none';
-        });
-    }
-
-    function setIcon(hWnd, icon) {
-        const element = document.querySelector(`#win${hWnd} .title-bar-text`);
-        if (element != null) {
-            const iconName = UTF8ToString(icon);
-            const src = `${RESOURCE_BASE}/icons/${iconName}.gif`;
-            const isDashboard = element.closest('.dlg-1') !== null;
-            const text = isDashboard ? 'Tabboz Mobile' : element.innerText;
-            element.innerHTML = `<img src="${src}" height="18" style="vertical-align:middle; margin-right:6px;" />` + text;
-        }
-    }
-
-    function moveWindow(hWnd, X, Y, nWidth, nHeight) {
-        const win = document.querySelector(`#win${hWnd}`);
-        if (win == null) return false;
-        win.style.left = X + 'px';
-        win.style.top = Y + 'px';
-        win.style.width = nWidth + 'px';
-        win.style.height = nHeight + 'px';
-        return true;
-    }
-
-    async function drawImage(hWnd, lpCanvasClass, lpBitmapName, x, y) {
-        const canvasClass = UTF8ToString(lpCanvasClass);
-        const imageId = UTF8ToString(lpBitmapName);
-        const canvas = document.querySelector(`#win${hWnd} .${canvasClass}`);
-        if (canvas) {
-            const url = `${RESOURCE_BASE}/bitmaps/${imageId}.png`;
-            const image = new Image();
-            await new Promise(r => { image.onload = r; image.onerror = r; image.src = url; });
-            canvas.getContext("2d").drawImage(image, x, y);
-        }
-    }
-
-    function getWindowRectDimension(hWnd, dimension) {
-        const win = document.querySelector(`#win${hWnd}`);
-        if (win == null) return 0;
-        const style = getComputedStyle(win);
-        switch (dimension) {
-            case 0: return parseInt(style.left) || 0;
-            case 1: return parseInt(style.top) || 0;
-            case 2: return (parseInt(style.left) || 0) + (parseInt(style.width) || 360);
-            case 3: return (parseInt(style.top) || 0) + (parseInt(style.height) || 400);
-            default: return 0;
-        }
-    }
-
-    function setDlgItemText(hWnd, nIDDlgItem, lpString) {
-        let control = document.querySelector(`#win${hWnd} .control${nIDDlgItem}`);
-        if (control == null) return false;
-        const text = sanitizeItalianText(UTF8ToString(lpString));
-        if (control.tagName === "INPUT") {
-            if (control.type === "radio") {
-                const label = control.parentNode.querySelector("label");
-                if (label != null) label.innerText = text;
-            } else {
-                control.value = text;
-            }
-        } else {
-            control.innerText = text;
-        }
-        return true;
-    }
-
-    function getDlgItemText(hWnd, nIDDlgItem, lpString, nMaxCount) {
-        let control = document.querySelector(`#win${hWnd} input.control${nIDDlgItem}`);
-        if (control != null) {
-            stringToUTF8(control.value, lpString, nMaxCount);
-            return control.value.length;
-        }
-        control = document.querySelector(`#win${hWnd} .control${nIDDlgItem}`);
-        if (control != null) {
-            stringToUTF8(control.innerText, lpString, nMaxCount);
-            return control.innerText.length;
-        }
-        return 0;
-    }
-
-    function setCheck(hWnd, nIDDlgItem, wParam) {
-        const control = document.querySelector(`#win${hWnd} .control${nIDDlgItem}`);
-        if (control != null) control.checked = (wParam !== 0);
-        return 0;
-    }
-
-    function getCheck(hWnd, nIDDlgItem) {
-        const control = document.querySelector(`#win${hWnd} .control${nIDDlgItem}`);
-        if (control != null) return control.checked ? 1 : 0;
-        return 0;
-    }
-
-    function comboBoxAddString(hWnd, nIDDlgItem, lpString) {
-        const control = document.querySelector(`#win${hWnd} select.control${nIDDlgItem}`);
-        if (control != null) {
-            const option = document.createElement('option');
-            option.text = UTF8ToString(lpString);
-            control.add(option, 0);
-        }
-        return 0;
-    }
-
-    function comboBoxSelect(hWnd, nIDDlgItem, wParam) {
-        const control = document.querySelector(`#win${hWnd} select.control${nIDDlgItem}`);
-        if (control != null) control.selectedIndex = wParam;
-        return 0;
-    }
-
-    function getSystemMetrics(nIndex) {
-        const screen = document.getElementById('screen');
-        if (!screen) return 0;
-        switch (nIndex) {
-            case SM_CXSCREEN: return parseInt(getComputedStyle(screen).width) || 360;
-            case SM_CYSCREEN: return parseInt(getComputedStyle(screen).height) || 640;
-            default: return 0;
-        }
-    }
-
-    function centerWindow(win) {
-        if (!win) return;
-        if (win.classList.contains('messagebox')) {
-            win.style.position = 'fixed';
-            win.style.left = '50%';
-            win.style.top = '50%';
-            win.style.transform = 'translate(-50%, -50%)';
-            return;
-        }
-        win.style.position = 'absolute';
-        win.style.left = '0px';
-        win.style.top = '0px';
-        win.style.margin = '0px';
-        win.style.width = '100%';
-        win.style.height = '100%';
-        win.style.transform = 'none';
-    }
-
-    function setIcon(hWnd, icon) {}
-    function moveWindow(hWnd, X, Y, nWidth, nHeight) {}
-    function getSystemMetrics(nIndex) {
-        const screen = document.getElementById("screen");
-        if (nIndex === SM_CXSCREEN) return screen ? screen.clientWidth : window.innerWidth;
-        if (nIndex === SM_CYSCREEN) return screen ? screen.clientHeight : window.innerHeight;
-        return 0;
-    }
-    function getWindowRectDimension(hWnd, dimension) {
-        const win = document.querySelector("#win" + hWnd);
-        if (!win) return 0;
-        const rect = win.getBoundingClientRect();
-        switch (dimension) {
-            case 0: return Math.round(rect.left);
-            case 1: return Math.round(rect.top);
-            case 2: return Math.round(rect.right);
-            case 3: return Math.round(rect.bottom);
-            default: return 0;
-        }
-    }
-    function setWindowInitialPosition(win, x, y, width, height, parentWindowId) {
-        centerWindow(win);
-    }
-
-    function createWindow(html, hWnd, x, y, width, height, lpCaption, dwStyle, dwExStyle, parentWindowId) {
-        const wall = createElementFromHTML(WALL_TMPL);
-        const win = createElementFromHTML(html || WINDOW_TMPL);
-        win.style.display = 'none';
-        win.style.margin = '0px';
-        wall.id = 'wall' + hWnd;
-        win.id = 'win' + hWnd;
-
-        const destination = document.getElementById('screen');
-        destination.appendChild(wall);
-        destination.appendChild(win);
-
-        setWindowInitialPosition(win, x, y, width, height, parentWindowId);
-
-        if (lpCaption != null) {
-            const rawCap = typeof lpCaption === 'number' ? UTF8ToString(lpCaption) : lpCaption;
-            const titleEl = win.querySelector('.title-bar-text');
-            if (titleEl) titleEl.innerText = sanitizeItalianText(rawCap);
-        }
-
-        // Ensure title bar close button sends IDCANCEL (2) or IDOK (1) to close cleanly
-        const closeBtn = win.querySelector('.control61536, .close-btn');
-        if (closeBtn) {
-            closeBtn.onclick = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (typeof _PostMessage === 'function') {
-                    _PostMessage(hWnd, WM_COMMAND, 2, 0);
-                }
-                stopWaiting();
-            };
-        }
-
-        return win;
-    }
-
-    async function messageBox(hWnd, lpText, lpCaption, uType, parentWindowId) {
-        console.log('[messageBox] opening messageBox hWnd:', hWnd, 'caption:', lpCaption);
-        const c = createWindow(MESSAGE_BOX_TMPL, hWnd, 0, 0, CW_SKIPRESIZE, CW_SKIPRESIZE, lpCaption, 0, 0, parentWindowId);
-        c.classList.add('messagebox');
-
-        if (uType & 0x00000020) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/102.png`;
-        else if (uType & 0x00000010) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/103.png`;
-        else if (uType & 0x00000030) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/101.png`;
-        else if (uType & 0x00000040) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/104.png`;
-        else c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/104.png`;
-
-        const btn1 = c.querySelector('.control1');
-        const btn2 = c.querySelector('.control2');
-        const btn6 = c.querySelector('.control6');
-        const btn7 = c.querySelector('.control7');
-
-        const btnType = uType & 0xF;
-        if (btnType === 0x00000001) { // MB_OKCANCEL
-            if (btn1) { btn1.style.display = 'inline-block'; attachButtonHandler(btn1, 1, hWnd); }
-            if (btn2) { btn2.style.display = 'inline-block'; attachButtonHandler(btn2, 2, hWnd); }
-            if (btn6) btn6.style.display = 'none';
-            if (btn7) btn7.style.display = 'none';
-        } else if (btnType === 0x00000004) { // MB_YESNO
-            if (btn1) btn1.style.display = 'none';
-            if (btn2) btn2.style.display = 'none';
-            if (btn6) { btn6.style.display = 'inline-block'; attachButtonHandler(btn6, 6, hWnd); }
-            if (btn7) { btn7.style.display = 'inline-block'; attachButtonHandler(btn7, 7, hWnd); }
-        } else { // MB_OK default
-            if (btn1) { btn1.innerText = 'OK'; btn1.style.display = 'inline-block'; attachButtonHandler(btn1, 1, hWnd); }
-            if (btn2) btn2.style.display = 'none';
-            if (btn6) btn6.style.display = 'none';
-            if (btn7) btn7.style.display = 'none';
-        }
-
-        const closeBtn = c.querySelector('.close-btn, .control61536');
-        if (closeBtn) {
-            closeBtn.onclick = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const dismissCmd = (btnType === 0x00000004) ? 7 : ((btnType === 0x00000001) ? 2 : 1);
-                if (typeof _PostMessage === 'function') {
-                    _PostMessage(hWnd, WM_COMMAND, dismissCmd, 0);
-                }
-                stopWaiting();
-            };
-        }
-
-        const rawText = typeof lpText === 'number' ? UTF8ToString(lpText) : lpText;
-        c.querySelector('.content').innerText = sanitizeItalianText(rawText);
-        setActiveWindow(hWnd);
-        showWindow(hWnd, 1);
-        centerWindow(c);
-    }
-
-    function resetElement(el) {
-        if (!el) return;
-        el.style.position = 'static';
-        el.style.left = 'auto';
-        el.style.top = 'auto';
-        el.style.width = 'auto';
-        el.style.height = 'auto';
-        el.style.margin = '0';
-    }
-
-    function getButtonOk(body) {
-        if (!body) return null;
-        return body.querySelector('button.control1') || body.querySelector('button.button_ok') || body.querySelector('button[class*="control1"]') || body.querySelector('.button_ok') || body.querySelector('.control1');
-    }
-
-    function getButtonCancel(body) {
-        if (!body) return null;
-        return body.querySelector('button.control2') || body.querySelector('button.button_cancel') || body.querySelector('button[class*="control2"]') || body.querySelector('.button_cancel') || body.querySelector('.control2');
-    }
-
-    function attachButtonHandler(button, controlId, winHwnd) {
-        if (!button) return;
-        button.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const targetHwnd = (winHwnd !== undefined && winHwnd !== null) ? winHwnd : _activeWindowHwnd;
-            if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
-                _PostMessage(targetHwnd, WM_COMMAND, controlId, 0);
-            }
-            stopWaiting();
-        };
-    }
+((TM) => {
+    'use strict';
+
+    const ui = TM.ui;
+    const resetElement = ui.resetElement;
+    const attachButtonHandler = ui.attachButtonHandler;
+    const getButtonOk = ui.getButtonOk;
+    const getButtonCancel = ui.getButtonCancel;
+    const RESOURCE_BASE = TM.RESOURCE_BASE;
+    const WM_COMMAND = TM.WM.COMMAND;
+    const stopWaiting = () => ui.stopWaiting();
 
     function transformDashboard(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
@@ -954,10 +275,13 @@
                 card.appendChild(gradeBadge);
             }
 
-            card.onclick = () => {
+            card.onclick = (event) => {
+
+
+                if (event) { event.preventDefault(); event.stopPropagation(); }
                 if (radio) {
                     radio.checked = true;
-                    const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : _activeWindowHwnd;
+                    const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : TM.getActiveHwnd();
                     if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
                         _PostMessage(targetHwnd, WM_COMMAND, radioId, 0);
                         stopWaiting();
@@ -1044,10 +368,12 @@
             packCard.className = 'pack-card';
             packCard.appendChild(pack);
             if (controlId !== null) {
-                packCard.onclick = () => {
+                packCard.onclick = (event) => {
+
+                    if (event) { event.preventDefault(); event.stopPropagation(); }
                     packsGrid.querySelectorAll('.pack-card').forEach(c => c.classList.remove('selected'));
                     packCard.classList.add('selected');
-                    const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : _activeWindowHwnd;
+                    const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : TM.getActiveHwnd();
                     if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
                         _PostMessage(targetHwnd, WM_COMMAND, controlId, 0);
                         stopWaiting();
@@ -1123,7 +449,19 @@
             const controlId = m ? Number(m[1] || m[0]) : null;
             const text = btn.innerText.trim();
             const icon = icons[text] || '🛍️';
-            btn.innerHTML = `<span class="btn-icon">${icon}</span> <span class="btn-text">${text}</span> <span class="btn-chevron">›</span>`;
+            btn.textContent = '';
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'btn-icon';
+            iconSpan.textContent = icon;
+            const textSpan = document.createElement('span');
+            textSpan.className = 'btn-text';
+            textSpan.textContent = text;
+            const chevron = document.createElement('span');
+            chevron.className = 'btn-chevron';
+            chevron.textContent = '›';
+            btn.appendChild(iconSpan);
+            btn.appendChild(textSpan);
+            btn.appendChild(chevron);
             if (controlId !== null) {
                 attachButtonHandler(btn, controlId, hWnd);
             }
@@ -1151,17 +489,17 @@
         if (!body) return;
 
         const soldiEl = body.querySelector('.control104') || body.querySelector('.control150');
-        const velocitaEl = body.querySelector('.control110') || body.querySelector('.control105');
-        const cilindrataEl = body.querySelector('.control113') || body.querySelector('.control106');
-        const efficienzaEl = body.querySelector('.control115') || body.querySelector('.control107');
-        const benzinaEl = body.querySelector('.control107') || body.querySelector('.control108');
+        const velocitaEl = body.querySelector('.control110');
+        const cilindrataEl = body.querySelector('.control113');
+        const efficienzaEl = body.querySelector('.control115');
+        const benzinaEl = body.querySelector('.control107');
         const nomeScooterEl = body.querySelector('.control116');
 
         const btnConcess = body.querySelector('.control101');
         const btnTrucca = body.querySelector('.control102');
         const btnRipara = body.querySelector('.control103');
-        const btnParcheggia = body.querySelector('.control105') || body.querySelector('.control109');
-        const btnBenza = body.querySelector('.control106') || body.querySelector('.control110');
+        const btnParcheggia = body.querySelector('.control105');
+        const btnBenza = body.querySelector('.control106');
         const btnOk = getButtonOk(body) || body.querySelector('.control1');
 
         const container = document.createElement('div');
@@ -1296,9 +634,12 @@
 
             card.appendChild(info);
 
-            card.onclick = () => {
+            card.onclick = (event) => {
+
+
+                if (event) { event.preventDefault(); event.stopPropagation(); }
                 radio.checked = true;
-                const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : _activeWindowHwnd;
+                const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : TM.getActiveHwnd();
                 if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
                     _PostMessage(targetHwnd, WM_COMMAND, radioId, 0);
                     stopWaiting();
@@ -1388,10 +729,13 @@
             label.innerText = discoNames[i - 1] || `Discoteca ${i}`;
             card.appendChild(label);
 
-            card.onclick = () => {
+            card.onclick = (event) => {
+
+
+                if (event) { event.preventDefault(); event.stopPropagation(); }
                 if (radio) {
                     radio.checked = true;
-                    const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : _activeWindowHwnd;
+                    const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : TM.getActiveHwnd();
                     if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
                         _PostMessage(targetHwnd, WM_COMMAND, radioId, 0);
                         stopWaiting();
@@ -1955,7 +1299,7 @@
         container.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : _activeWindowHwnd;
+            const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : TM.getActiveHwnd();
             if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
                 _PostMessage(targetHwnd, WM_COMMAND, 202, 0);
             }
@@ -2125,7 +1469,7 @@
                     e.stopPropagation();
                     opt.input.checked = !opt.input.checked;
                     optCard.classList.toggle('selected', opt.input.checked);
-                    const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : _activeWindowHwnd;
+                    const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : TM.getActiveHwnd();
                     if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
                         _PostMessage(targetHwnd, WM_COMMAND, opt.controlId, 0);
                         stopWaiting();
@@ -2190,7 +1534,19 @@
             const m = btn.className.match(/control(\d+)/) || btn.className.match(/\d+/);
             const controlId = m ? Number(m[1] || m[0]) : null;
             const text = btn.innerText.trim();
-            btn.innerHTML = `<span class="btn-icon">🏢</span> <span class="btn-text">${text}</span> <span class="btn-chevron">›</span>`;
+            btn.textContent = '';
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'btn-icon';
+            iconSpan.textContent = '🏢';
+            const textSpan = document.createElement('span');
+            textSpan.className = 'btn-text';
+            textSpan.textContent = text;
+            const chevron = document.createElement('span');
+            chevron.className = 'btn-chevron';
+            chevron.textContent = '›';
+            btn.appendChild(iconSpan);
+            btn.appendChild(textSpan);
+            btn.appendChild(chevron);
             if (controlId !== null) {
                 attachButtonHandler(btn, controlId, hWnd);
             }
@@ -2980,7 +2336,9 @@
             card.appendChild(middleRow);
 
             // Whole card selection interaction
-            card.onclick = () => {
+            card.onclick = (event) => {
+
+                if (event) { event.preventDefault(); event.stopPropagation(); }
                 productsList.querySelectorAll('.phone-product-card').forEach(c => c.classList.remove('selected'));
                 card.classList.add('selected');
                 radio.checked = true;
@@ -3164,7 +2522,10 @@
             `;
             simRow.prepend(simRadio);
 
-            simRow.onclick = () => {
+            simRow.onclick = (event) => {
+
+
+                if (event) { event.preventDefault(); event.stopPropagation(); }
                 deselectAllOptions();
                 simRow.classList.add('selected');
                 simRadio.checked = true;
@@ -3193,7 +2554,10 @@
                 `;
                 recRow.prepend(recRadio);
 
-                recRow.onclick = () => {
+                recRow.onclick = (event) => {
+
+
+                    if (event) { event.preventDefault(); event.stopPropagation(); }
                     deselectAllOptions();
                     recRow.classList.add('selected');
                     recRadio.checked = true;
@@ -3290,12 +2654,15 @@
             }
             card.appendChild(info);
 
-            card.onclick = () => {
+            card.onclick = (event) => {
+
+
+                if (event) { event.preventDefault(); event.stopPropagation(); }
                 radio.checked = true;
                 modelsGrid.querySelectorAll('.scooter-model-card').forEach(c => c.classList.remove('selected'));
                 card.classList.add('selected');
                 const match = radio.className.match(/\d+/);
-                const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : _activeWindowHwnd;
+                const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : TM.getActiveHwnd();
                 if (match && typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
                     _PostMessage(targetHwnd, WM_COMMAND, Number(match[0]), 0);
                     stopWaiting();
@@ -3501,7 +2868,7 @@
             opt1.querySelector('.exit-radio-indicator').classList.toggle('checked', isOpt1);
             opt2.querySelector('.exit-radio-indicator').classList.toggle('checked', !isOpt1);
 
-            const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : _activeWindowHwnd;
+            const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : TM.getActiveHwnd();
             if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
                 _PostMessage(targetHwnd, WM_COMMAND, controlId, 0);
             }
@@ -3586,380 +2953,61 @@
         });
     }
 
-    async function dialogBox(hWnd, dialog, parentWindowId, hInstance) {
-        const dialogNum = parseInt(dialog, 10);
-        let html = _dialogTemplateCache.get(dialogNum);
-        if (!html) {
-            try {
-                const response = await fetch(`${RESOURCE_BASE}/dialogs/includes/${dialog}.inc.html`);
-                if (response.ok) {
-                    html = await response.text();
-                    _dialogTemplateCache.set(dialogNum, html);
-                }
-            } catch (err) {
-                console.warn('[dialogBox] Failed to load dialog template:', dialog, err);
-            }
+
+    const exact = {
+        1: transformDashboard,
+        2: transformAbout,
+        4: transformDisco,
+        5: transformFamiglia,
+        6: transformCompagnia,
+        7: transformScooter,
+        8: transformNegoziMenu,
+        9: transformTipa,
+        10: transformScuola,
+        11: transformScuola,
+        12: transformSplash,
+        13: transformLavoro,
+        16: transformExitSession,
+        73: transformTruccaScooter,
+        88: transformTabacchi,
+        89: transformPalestra,
+        91: transformCercaTipa,
+        92: transformDueDonne,
+        95: transformDueDiPicche,
+        96: transformEventBeatdown,
+        110: transformPagella,
+        120: transformCellulare,
+        121: transformCompraCellulare,
+        123: transformRicaricaCellulare,
+        190: transformTipa,
+        191: transformCercaTipa,
+        192: transformDueDonne,
+        210: transformCompanyList
+    };
+
+    const ranges = [
+        { min: 70, max: 72, fn: transformScooterShop },
+        { min: 74, max: 79, fn: transformScooterShowroom },
+        { min: 80, max: 86, fn: transformShop },
+        { min: 93, max: 94, fn: transformDate },
+        { min: 100, max: 107, fn: transformEventBeatdown },
+        { min: 200, max: 209, fn: transformJobQuiz },
+        { min: 290, max: 297, fn: transformCompanyInfo },
+        { min: 390, max: 397, fn: transformJobOffer }
+    ];
+
+    TM.resolveTransformer = function resolveTransformer(dialogNum) {
+        const exactFn = exact[dialogNum];
+        if (exactFn) return exactFn;
+        for (let i = 0; i < ranges.length; i++) {
+            const range = ranges[i];
+            if (dialogNum >= range.min && dialogNum <= range.max) return range.fn;
         }
+        return transformGeneric;
+    };
 
-        if (!html) {
-            // Safe fallback template if template is missing so C never hangs
-            html = `<div class="window" style="position: absolute; margin: 32px; width: 320px; height: 200px">
-                <div class="title-bar"><div class="title-bar-text">Finestra ${dialogNum}</div></div>
-                <div class="window-body">
-                    <div style="padding: 16px; text-align: center;">Operazione completata.</div>
-                    <button class="dlg_item control1 button_ok mobile-btn primary" data-class="BorBtn" style="margin: 16px auto; width: 80%;">✓ Continua</button>
-                </div>
-            </div>`;
-        }
-
-        // Decode character escape sequences and CP1252 artifacts
-        html = sanitizeItalianText(html);
-
-        // Fix relative image paths in templates
-        html = html.replace(/src="resources\//g, 'src="../resources/');
-        html = html.replace(/class="window-body[^"]*"/g, 'class="window-body"');
-
-        const win = createWindow(html, hWnd, CW_USEDEFAULT, CW_USEDEFAULT, CW_SKIPRESIZE, CW_SKIPRESIZE, null, 0, 0, parentWindowId);
-        console.log('[dialogBox] hWnd:', hWnd, 'dialog:', dialog, 'dialogNum:', dialogNum);
-        win.classList.add('dlg-' + dialogNum);
-
-        const loadingScreen = document.getElementById('loading-screen');
-        if (loadingScreen) {
-            loadingScreen.style.opacity = '0';
-            loadingScreen.style.transition = 'opacity 0.3s ease';
-            setTimeout(() => { if (loadingScreen.parentNode) loadingScreen.remove(); }, 300);
-        }
-
-        setActiveWindow(hWnd);
-        addMainMenu(win);
-
-        try {
-            if (dialogNum === 1) {
-                console.log('[dialogBox] transforming Dashboard for hWnd', hWnd);
-                transformDashboard(win, hWnd);
-            } else if (dialogNum === 2) {
-                transformAbout(win, hWnd);
-            } else if (dialogNum === 10 || dialogNum === 11) {
-                transformScuola(win, hWnd);
-            } else if (dialogNum === 88) {
-                transformTabacchi(win, hWnd);
-            } else if (dialogNum === 8) {
-                transformNegoziMenu(win, hWnd);
-            } else if (dialogNum >= 80 && dialogNum <= 86) {
-                transformShop(win, hWnd);
-            } else if (dialogNum === 7) {
-                transformScooter(win, hWnd);
-            } else if (dialogNum === 73) {
-                transformTruccaScooter(win, hWnd);
-            } else if (dialogNum >= 74 && dialogNum <= 79) {
-                transformScooterShowroom(win, hWnd);
-            } else if (dialogNum >= 70 && dialogNum <= 72) {
-                transformScooterShop(win, hWnd);
-            } else if (dialogNum === 4) {
-                transformDisco(win, hWnd);
-            } else if (dialogNum === 13) {
-                transformLavoro(win, hWnd);
-            } else if (dialogNum >= 390 && dialogNum <= 397) {
-                transformJobOffer(win, hWnd);
-            } else if (dialogNum >= 200 && dialogNum <= 209) {
-                transformJobQuiz(win, hWnd);
-            } else if (dialogNum === 210) {
-                transformCompanyList(win, hWnd);
-            } else if (dialogNum >= 290 && dialogNum <= 297) {
-                transformCompanyInfo(win, hWnd);
-            } else if (dialogNum === 5) {
-                transformFamiglia(win, hWnd);
-            } else if (dialogNum === 6) {
-                transformCompagnia(win, hWnd);
-            } else if (dialogNum === 9 || dialogNum === 190) {
-                transformTipa(win, hWnd);
-            } else if (dialogNum === 91 || dialogNum === 191) {
-                transformCercaTipa(win, hWnd);
-            } else if (dialogNum === 92 || dialogNum === 192) {
-                transformDueDonne(win, hWnd);
-            } else if (dialogNum === 95) {
-                transformDueDiPicche(win, hWnd);
-            } else if (dialogNum >= 93 && dialogNum <= 94) {
-                transformDate(win, hWnd);
-            } else if (dialogNum === 89) {
-                transformPalestra(win, hWnd);
-            } else if (dialogNum === 110) {
-                transformPagella(win, hWnd);
-            } else if (dialogNum === 120) {
-                transformCellulare(win, hWnd);
-            } else if (dialogNum === 121) {
-                transformCompraCellulare(win, hWnd);
-            } else if (dialogNum === 123) {
-                transformRicaricaCellulare(win, hWnd);
-            } else if ((dialogNum >= 100 && dialogNum <= 107) || dialogNum === 96) {
-                transformEventBeatdown(win, hWnd);
-            } else if (dialogNum === 16) {
-                transformExitSession(win, hWnd);
-            } else if (dialogNum === 12) {
-                transformSplash(win, hWnd);
-            } else {
-                transformGeneric(win, hWnd);
-            }
-        } catch (err) {
-            console.error('[dialogBox] Error transforming dialog ' + dialogNum + ':', err);
-            transformGeneric(win, hWnd);
-        }
-
-        win.querySelectorAll('.dlg_item').forEach(element => {
-            const m = element.className.match(/control(\d+)/) || element.className.match(/\d+/);
-            const hMenu = m ? Number(m[1] || m[0]) : -1;
-            const dataClass = element.getAttribute('data-class');
-            if (hMenu !== -1 && dataClass && typeof _AllocateControl === 'function') {
-                const lpClassName = _malloc(128);
-                try {
-                    stringToUTF8(dataClass, lpClassName, 128);
-                    _AllocateControl(hInstance, lpClassName, hWnd, hMenu);
-                } finally {
-                    _free(lpClassName);
-                }
-            }
-        });
-
-        showWindow(hWnd, 1);
-        centerWindow(win);
-    }
-
-    function destroyWindow(hWnd) {
-        console.log('[destroyWindow] destroying window:', hWnd);
-        const wall = document.getElementById('wall' + hWnd);
-        const win = document.getElementById('win' + hWnd);
-        if (wall) wall.remove();
-        if (win) win.remove();
-
-        const remainingWindows = Array.from(document.querySelectorAll('.window'));
-        if (remainingWindows.length > 0) {
-            const topWin = remainingWindows[remainingWindows.length - 1];
-            const m = topWin.id.match(/\d+/);
-            if (m) {
-                const newHwnd = Number(m[0]);
-                setActiveWindow(newHwnd);
-            }
-        } else {
-            _activeWindowHwnd = null;
-        }
-        stopWaiting();
-    }
-
-    function loadString(uID, lpBuffer, cchBufferMax) {
-        const value = (window.strings && window.strings[uID]) || "";
-        stringToUTF8(value, lpBuffer, cchBufferMax);
-        return value.length;
-    }
-
-    async function loadStringResources() {
-        if (_stringsCache && Object.keys(_stringsCache).length > 0) {
-            window.strings = _stringsCache;
-            exports.strings = _stringsCache;
-            return;
-        }
-        try {
-            const response = await fetch(`${RESOURCE_BASE}/strings/strings.json`);
-            window.strings = await response.json();
-            _stringsCache = window.strings;
-            exports.strings = window.strings;
-        } catch (e) {
-            console.warn("loadStringResources failed:", e);
-            window.strings = window.strings || {};
-        }
-    }
-
-    async function preload() {
-        if (_bitmapsListCache) {
-            return;
-        }
-        try {
-            const response = await fetch(`${RESOURCE_BASE}/bitmaps/list.json`);
-            const json = await response.json();
-            _bitmapsListCache = Array.isArray(json) ? json : (json.data || []);
-            _bitmapsListCache.forEach(element => {
-                const img = new Image();
-                img.src = `${RESOURCE_BASE}/bitmaps/${element}`;
-            });
-        } catch (e) {
-            console.warn("preload failed:", e);
-        }
-    }
-
-    function calculateClickPosition(event) {
-        const rect = event.target.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        return ((y & 0xffff) << 16) + (x & 0xffff);
-    }
-
-    function isCheckbox(element) {
-        return element.nodeName === "INPUT" && element.type === "checkbox";
-    }
-
-    function eventListenerSetup() {
-        document.body.addEventListener('click', eventHandler);
-        document.body.addEventListener('keydown', eventHandler);
-        document.body.addEventListener('input', eventHandler);
-    }
-
-    function eventHandler(event) {
-        let target = event.target;
-        // If clicking a label, find the associated input
-        if (target.tagName === 'LABEL' && target.htmlFor) {
-            const input = document.getElementById(target.htmlFor);
-            if (input) target = input;
-        } else if (target.closest('.dlg_item')) {
-            target = target.closest('.dlg_item');
-        }
-
-        const match = target.className && typeof target.className === 'string' 
-            ? (target.className.match(/control(\d+)/) || target.className.match(/\d+/)) 
-            : null;
-
-        // Determine target window handle: prioritize the window containing the clicked element
-        let targetHwnd = _activeWindowHwnd;
-        const clickedWin = target.closest('.window');
-        if (clickedWin && clickedWin.id) {
-            const m = clickedWin.id.match(/\d+/);
-            if (m) {
-                targetHwnd = Number(m[0]);
-                if (targetHwnd !== _activeWindowHwnd) {
-                    setActiveWindow(targetHwnd);
-                }
-            }
-        }
-
-        const controlId = match ? Number(match[1] || match[0]) : null;
-
-        switch (event.type) {
-            case 'click':
-                if (controlId !== null && targetHwnd !== null && targetHwnd !== undefined) {
-                    const message = WM_COMMAND;
-                    const wParam = controlId;
-                    const lParam = calculateClickPosition(event);
-                    if (typeof _PostMessage === 'function') {
-                        _PostMessage(targetHwnd, message, wParam, lParam);
-                    }
-                }
-                break;
-            case 'input':
-                if (controlId !== null && !isCheckbox(target) && targetHwnd !== null && targetHwnd !== undefined) {
-                    const message = WM_COMMAND;
-                    const wParam = controlId;
-                    const lParam = 0;
-                    if (typeof _PostMessage === 'function') {
-                        _PostMessage(targetHwnd, message, wParam, lParam);
-                    }
-                }
-                break;
-            case 'keydown':
-                if (targetHwnd !== null && targetHwnd !== undefined) {
-                    if (event.keyCode === 27) { // ESC
-                        const message = WM_KEYDOWN;
-                        const wParam = VK_ESCAPE;
-                        const lParam = 0;
-                        if (typeof _PostMessage === 'function') {
-                            _PostMessage(targetHwnd, message, wParam, lParam);
-                        }
-                    } else if (target.nodeName === "BUTTON" && event.keyCode === 13 && controlId !== null) {
-                        const message = WM_COMMAND;
-                        const wParam = controlId;
-                        const lParam = 0;
-                        if (typeof _PostMessage === 'function') {
-                            _PostMessage(targetHwnd, message, wParam, lParam);
-                        }
-                    }
-                }
-                break;
-        }
-        stopWaiting();
-    }
-
-    function shutdown() {
-        const element = createElementFromHTML(SHUTDOWN_TMPL);
-        element.style.display = 'flex';
-        document.getElementById('screen').appendChild(element);
-    }
-
-    let _gameStarted = false;
-    let _desktopIconAdded = false;
-
-    function startGame() {
-        if (_gameStarted) return;
-        console.log('[Tabboz] Starting game engine...');
-
-        function tryLaunch(attemptsLeft) {
-            const startupFn = (typeof _WinMainStartup === 'function') 
-                ? _WinMainStartup 
-                : (typeof Module !== 'undefined' && typeof Module._WinMainStartup === 'function' ? Module._WinMainStartup : null);
-
-            if (startupFn) {
-                try {
-                    _gameStarted = true;
-                    console.log('[Tabboz] Executing _WinMainStartup()');
-                    startupFn();
-                    return;
-                } catch (e) {
-                    console.warn('[Tabboz] WinMainStartup execution deferred:', e);
-                    _gameStarted = false;
-                }
-            }
-
-            if (attemptsLeft > 0) {
-                setTimeout(() => tryLaunch(attemptsLeft - 1), 60);
-            } else {
-                console.error('[Tabboz] Fatal: Could not launch WinMainStartup after retries.');
-                const loadingScreen = document.getElementById('loading-screen');
-                if (loadingScreen) loadingScreen.remove();
-            }
-        }
-
-        setTimeout(() => tryLaunch(80), 30);
-    }
-
-    function addDesktopIcon(name, icon, title) {
-        console.log('[Tabboz] addDesktopIcon called by C runtime. Scheduling game start.');
-        _desktopIconAdded = true;
-        setTimeout(() => {
-            startGame();
-        }, 20);
-    }
-    function makeDraggable(element) {}
-
-    // =========================================================================
-    // Exports
-    // =========================================================================
-    exports.startGame = startGame;
-    exports.addDesktopIcon = addDesktopIcon;
-    exports.addMainMenu = addMainMenu;
-    exports.addMenuToWindow = addMenuToWindow;
-    exports.makeDraggable = makeDraggable;
-    exports.waitEvent = waitEvent;
-    exports.stopWaiting = stopWaiting;
-    exports.createElementFromHTML = createElementFromHTML;
-    exports.setActiveWindow = setActiveWindow;
-    exports.showWindow = showWindow;
-    exports.showApp = showApp;
-    exports.setIcon = setIcon;
-    exports.moveWindow = moveWindow;
-    exports.getWindowRectDimension = getWindowRectDimension;
-    exports.drawImage = drawImage;
-    exports.setDlgItemText = setDlgItemText;
-    exports.getDlgItemText = getDlgItemText;
-    exports.setCheck = setCheck;
-    exports.getCheck = getCheck;
-    exports.comboBoxAddString = comboBoxAddString;
-    exports.comboBoxSelect = comboBoxSelect;
-    exports.getSystemMetrics = getSystemMetrics;
-    exports.loadString = loadString;
-    exports.loadStringResources = loadStringResources;
-    exports.messageBox = messageBox;
-    exports.dialogBox = dialogBox;
-    exports.createWindow = createWindow;
-    exports.destroyWindow = destroyWindow;
-    exports.preload = preload;
-    exports.eventListenerSetup = eventListenerSetup;
-    exports.shutdown = shutdown;
-    exports.generateMenuHTML = generateMenuHTML;
-
-})(window);
+    TM.transformDialog = function transformDialog(win, hWnd, dialogNum) {
+        const fn = TM.resolveTransformer(dialogNum);
+        fn(win, hWnd);
+    };
+})(window.TabbozMobile);

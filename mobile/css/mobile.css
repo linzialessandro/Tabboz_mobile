@@ -1,3 +1,14 @@
+/*
+ * Tabboz Mobile layout
+ *
+ * 1. Shell / fullscreen windows
+ * 2. Title bar, buttons, message boxes
+ * 3. Per-dialog screens (dashboard, scuola, shops, palestra, phone, ...)
+ * 4. Save manager
+ * 5. Loading / shutdown
+ *
+ * Visual rules live here. Win32 control IDs and game logic stay in JS/C.
+ */
 html, body {
     margin: 0;
     padding: 0;

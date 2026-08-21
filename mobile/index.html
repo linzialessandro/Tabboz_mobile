@@ -2,9 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; connect-src 'self'; font-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +14,7 @@
     <link rel="icon" type="image/x-icon" href="../resources/icons/1.ico">
     <link rel="stylesheet" href="../resources/css/98.css">
     <link rel="stylesheet" href="../resources/css/novantotto.css">
-    <link rel="stylesheet" href="css/mobile.css?v=30">
+    <link rel="stylesheet" href="css/mobile.css?v=31">
     <title>Tabboz Mobile</title>
 </head>
 <body>
@@ -29,37 +27,15 @@
         </div>
     </div>
 
-    <button class="save-manager-floating-btn" onclick="SaveManager.openModal()" title="Gestione Salvataggi">💾 Salvataggi</button>
+    <button type="button" class="save-manager-floating-btn" id="save-manager-open" title="Gestione Salvataggi">💾 Salvataggi</button>
     <div class="screen" id="screen"></div>
-    <script src="js/mobile-bridge.js?v=30"></script>
-    <script src="js/save-manager.js?v=30"></script>
-    <script type="text/javascript">
-    var Module = {
-        locateFile: function(path, prefix) {
-            if (path.endsWith('.wasm')) {
-                return 'zarrosim.wasm';
-            }
-            return prefix + path;
-        },
-        postRun: [function() {
-            if (typeof startGame === 'function') {
-                startGame();
-            }
-        }],
-        print: (text) => console.log(text),
-        printErr: (text) => console.error(text),
-    };
 
-    // Safety timeout: Ensure loading screen never blocks indefinitely
-    setTimeout(function() {
-        var ls = document.getElementById('loading-screen');
-        if (ls) {
-            ls.style.opacity = '0';
-            ls.style.transition = 'opacity 0.5s ease';
-            setTimeout(function() { if (ls.parentNode) ls.remove(); }, 500);
-        }
-    }, 4000);
-    </script>
-    <script type="text/javascript" src="../zarrosim.js?v=30"></script>
+    <script src="js/config.js?v=31"></script>
+    <script src="js/ui-kit.js?v=31"></script>
+    <script src="js/screens.js?v=31"></script>
+    <script src="js/win32-bridge.js?v=31"></script>
+    <script src="js/save-manager.js?v=31"></script>
+    <script src="js/boot.js?v=31"></script>
+    <script src="../zarrosim.js?v=31"></script>
 </body>
 </html>
