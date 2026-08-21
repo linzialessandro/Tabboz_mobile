@@ -2412,3 +2412,303 @@ button:active, input[type="button"]:active {
     z-index: 9999;
     padding: 20px;
 }
+
+/* =========================================================================
+   Phone Store & Mobile Views (Dialog 120, 121, 123)
+   ========================================================================= */
+
+.phone-shop-header-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
+}
+
+.phone-shop-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #008080;
+    letter-spacing: 0.5px;
+}
+
+.phone-shop-subtitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+/* Dialog 120: Main Phone Hub */
+.phone-status-card {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    border: 1px solid #b0c2c2;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.phone-status-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 10px;
+}
+
+.phone-status-icon {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+}
+
+.phone-status-title-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.phone-status-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #008080;
+}
+
+.phone-status-subtitle {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+.phone-status-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.phone-status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+}
+
+.phone-status-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #374151;
+}
+
+.phone-status-val {
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    color: #008080 !important;
+}
+
+.phone-status-val.empty {
+    color: #9ca3af !important;
+    font-style: italic;
+    font-weight: 600 !important;
+}
+
+/* Dialog 121: Compra Cellulare */
+.phone-products-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+}
+
+.phone-product-card {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 14px 16px;
+    border: 2px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.phone-product-card.selected {
+    border-color: #008080 !important;
+    background: #f0fdfa !important;
+    box-shadow: 0 4px 12px rgba(0, 128, 128, 0.15) !important;
+}
+
+.phone-product-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.phone-product-radio-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.phone-product-name {
+    font-size: 16px;
+    font-weight: 800;
+    color: #1f2937;
+}
+
+.phone-fama-badge {
+    background: #fef3c7;
+    color: #92400e;
+    font-weight: 800;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    border: 1px solid #fde68a;
+}
+
+.phone-product-middle-row {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.phone-product-img {
+    width: 60px !important;
+    height: 100px !important;
+    object-fit: contain !important;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 4px;
+    border: 1px solid #e2e8f0;
+}
+
+.phone-product-info-col {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.phone-product-price-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.phone-product-price-box .price-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #6b7280;
+}
+
+.phone-product-price-val {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #008080 !important;
+}
+
+.phone-product-desc {
+    font-size: 12px;
+    color: #4b5563;
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* Dialog 123: Ricariche & Nuove SIM */
+.operators-container {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+}
+
+.operator-card {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.operator-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.operator-logo {
+    max-height: 38px;
+    max-width: 110px;
+    object-fit: contain;
+}
+
+.operator-name {
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.operator-options-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.operator-option-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 10px 12px;
+    border: 1.5px solid #e2e8f0;
+    cursor: pointer;
+    gap: 10px;
+    transition: all 0.15s ease;
+}
+
+.operator-option-row.selected {
+    border-color: #008080 !important;
+    background: #f0fdfa !important;
+}
+
+.operator-option-row input[type="radio"] {
+    margin: 0;
+    transform: scale(1.2);
+}
+
+.operator-option-row .option-left {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.operator-option-row .option-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.operator-option-row .option-bonus {
+    font-size: 12px;
+    font-weight: 600;
+    color: #059669;
+}
+
+.operator-option-row .option-price {
+    font-size: 14px;
+    font-weight: 800;
+    color: #008080;
+    white-space: nowrap;
+}
