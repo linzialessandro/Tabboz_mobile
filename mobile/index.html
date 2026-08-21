@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; connect-src 'self'; font-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#008080">
+    <meta name="description" content="Tabboz Simulator - Versione Mobile">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="icon" type="image/x-icon" href="../resources/icons/1.ico">
+    <link rel="stylesheet" href="../resources/css/98.css">
+    <link rel="stylesheet" href="../resources/css/novantotto.css">
+    <title>Tabboz Mobile</title>
+</head>
+<body>
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-title">Tabboz Mobile</div>
+            <div class="loading-subtitle">Caricamento simulatore...</div>
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Avvio in corso...</div>
+        </div>
+    </div>
+
+    <button type="button" class="save-manager-floating-btn" id="save-manager-open" title="Gestione Salvataggi">💾 Salvataggi</button>
+    <div class="screen" id="screen"></div>
+    <script src="js/version.js"></script>
+</body>
+</html>

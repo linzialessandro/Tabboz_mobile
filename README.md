@@ -5,6 +5,22 @@
 
 Simply tap the icon to launch the Tabboz Simulator directly in your browser.
 
+## 📱 Mobile PWA
+
+A touch-first Progressive Web App lives in [`mobile/`](mobile/). It keeps the
+original C/WebAssembly engine and Novantotto Win32 ABI; only the presentation
+layer is new (save slots, installable PWA, vertical layout).
+
+- Play: open [`mobile/`](mobile/) (this fork’s Pages preview: [Tabboz Mobile](https://linzialessandro.github.io/Tabboz_mobile/mobile/))
+- Architecture: [`mobile/README.md`](mobile/README.md)
+
+```shell
+python3 server.py
+# Desktop emulator: http://localhost:8080/
+# Mobile PWA:       http://localhost:8080/mobile/
+node mobile/js/test.js
+```
+
 ## 🖥️ Web development
 
 <div align="center">
@@ -49,3 +65,8 @@ make format
 ## ⚖️ LICENSE
 
 [![GPL 3](https://www.gnu.org/graphics/gplv3-or-later.png)](https://www.gnu.org/licenses/gpl-3.0.en.html)
+
+This project is distributed under GPL-3.0, as supplied in [`LICENSE`](LICENSE).
+The mobile Win32 bridge adapts Novantotto, available under MPL-2.0; that notice
+is retained in [`mobile/js/win32-bridge.js`](mobile/js/win32-bridge.js).
+Original authorship: Andrea Bonomi and Emanuele Caccialanza.
