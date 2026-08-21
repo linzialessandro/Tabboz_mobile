@@ -35,6 +35,63 @@
 
     const RESOURCE_BASE = '../resources';
 
+    // In-memory resource caches to eliminate network latency & mid-game async hangs
+    const _dialogTemplateCache = new Map();
+    let _stringsCache = null;
+    let _bitmapsListCache = null;
+
+    const KNOWN_DIALOGS = [
+        1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20,
+        70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
+        80, 81, 82, 83, 84, 85, 86, 88, 89,
+        91, 92, 93, 94, 95, 96,
+        100, 101, 102, 103, 104, 105, 106, 107, 110,
+        120, 121, 123, 190, 191, 192,
+        200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210,
+        290, 291, 292, 293, 294, 295, 296, 297,
+        390, 391, 392, 393, 394, 395, 396, 397
+    ];
+
+    function eagerPreloadAllResources() {
+        // 1. Strings
+        fetch(`${RESOURCE_BASE}/strings/strings.json`)
+            .then(res => res.ok ? res.json() : {})
+            .then(data => {
+                _stringsCache = data;
+                window.strings = data;
+                exports.strings = data;
+            })
+            .catch(err => console.warn('[Preload] strings.json eager fetch failed:', err));
+
+        // 2. Bitmaps list
+        fetch(`${RESOURCE_BASE}/bitmaps/list.json`)
+            .then(res => res.ok ? res.json() : [])
+            .then(json => {
+                _bitmapsListCache = Array.isArray(json) ? json : (json.data || []);
+                _bitmapsListCache.forEach(element => {
+                    const img = new Image();
+                    img.src = `${RESOURCE_BASE}/bitmaps/${element}`;
+                });
+            })
+            .catch(err => console.warn('[Preload] bitmaps list eager fetch failed:', err));
+
+        // 3. All Dialog Templates in parallel
+        KNOWN_DIALOGS.forEach(dialogId => {
+            fetch(`${RESOURCE_BASE}/dialogs/includes/${dialogId}.inc.html`)
+                .then(res => res.ok ? res.text() : null)
+                .then(html => {
+                    if (html) _dialogTemplateCache.set(Number(dialogId), html);
+                })
+                .catch(() => {});
+        });
+    }
+    // Launch eager preloading immediately upon script execution
+    try {
+        eagerPreloadAllResources();
+    } catch (e) {
+        console.warn('[Preload] eagerPreloadAllResources initialization error:', e);
+    }
+
     // Dialog IDs (mapped from zarrosim.h / resource.h)
     const DLG = {
         DASHBOARD: 1,
@@ -80,13 +137,28 @@
         JOB_OFFER_MAX: 397
     };
 
-    // Intercept Audio for mobile sub-directory compatibility
+    // Intercept Audio for mobile sub-directory compatibility and safe autoplay
     const OriginalAudio = window.Audio;
     window.Audio = function(src) {
         if (src && typeof src === 'string' && src.startsWith('resources/')) {
             src = '../' + src;
         }
-        return new OriginalAudio(src);
+        const audio = new OriginalAudio(src);
+        const origPlay = audio.play;
+        if (origPlay) {
+            audio.play = function() {
+                try {
+                    const p = origPlay.apply(this, arguments);
+                    if (p && typeof p.catch === 'function') {
+                        p.catch(() => {});
+                    }
+                    return p;
+                } catch (e) {
+                    return Promise.resolve();
+                }
+            };
+        }
+        return audio;
     };
     window.Audio.prototype = OriginalAudio.prototype;
 
@@ -2967,7 +3039,7 @@
         body.appendChild(container);
     }
 
-    function transformGeneric(win) {
+    function transformGeneric(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
@@ -2989,17 +3061,51 @@
             el.style.width = 'auto';
             el.style.height = 'auto';
         });
+
+        // Automatically wire all buttons with attachButtonHandler
+        body.querySelectorAll('button, .button_ok, .button_cancel, .dlg_item[data-class="BUTTON"], .dlg_item[data-class="BorBtn"]').forEach(btn => {
+            const m = btn.className.match(/control(\d+)/) || btn.className.match(/\d+/);
+            const controlId = m ? Number(m[1] || m[0]) : null;
+            if (controlId !== null) {
+                if (!btn.classList.contains('mobile-btn')) {
+                    btn.classList.add('mobile-btn');
+                    if (controlId === 1 || btn.classList.contains('button_ok')) {
+                        btn.classList.add('primary');
+                    } else if (controlId === 2 || btn.classList.contains('button_cancel')) {
+                        btn.classList.add('secondary');
+                    } else {
+                        btn.classList.add('primary');
+                    }
+                }
+                attachButtonHandler(btn, controlId, hWnd);
+            }
+        });
     }
 
     async function dialogBox(hWnd, dialog, parentWindowId, hInstance) {
-        let html;
-        try {
-            const response = await fetch(`${RESOURCE_BASE}/dialogs/includes/${dialog}.inc.html`);
-            if (!response.ok) throw new Error(`Dialog ${dialog} fetch failed: ${response.status}`);
-            html = await response.text();
-        } catch (err) {
-            console.error('[dialogBox] Failed to load dialog template:', dialog, err);
-            return;
+        const dialogNum = parseInt(dialog, 10);
+        let html = _dialogTemplateCache.get(dialogNum);
+        if (!html) {
+            try {
+                const response = await fetch(`${RESOURCE_BASE}/dialogs/includes/${dialog}.inc.html`);
+                if (response.ok) {
+                    html = await response.text();
+                    _dialogTemplateCache.set(dialogNum, html);
+                }
+            } catch (err) {
+                console.warn('[dialogBox] Failed to load dialog template:', dialog, err);
+            }
+        }
+
+        if (!html) {
+            // Safe fallback template if template is missing so C never hangs
+            html = `<div class="window" style="position: absolute; margin: 32px; width: 320px; height: 200px">
+                <div class="title-bar"><div class="title-bar-text">Finestra ${dialogNum}</div></div>
+                <div class="window-body">
+                    <div style="padding: 16px; text-align: center;">Operazione completata.</div>
+                    <button class="dlg_item control1 button_ok mobile-btn primary" data-class="BorBtn" style="margin: 16px auto; width: 80%;">✓ Continua</button>
+                </div>
+            </div>`;
         }
 
         // Decode character escape sequences and CP1252 artifacts
@@ -3010,7 +3116,6 @@
         html = html.replace(/class="window-body[^"]*"/g, 'class="window-body"');
 
         const win = createWindow(html, hWnd, CW_USEDEFAULT, CW_USEDEFAULT, CW_SKIPRESIZE, CW_SKIPRESIZE, null, 0, 0, parentWindowId);
-        const dialogNum = parseInt(dialog, 10);
         console.log('[dialogBox] hWnd:', hWnd, 'dialog:', dialog, 'dialogNum:', dialogNum);
         win.classList.add('dlg-' + dialogNum);
 
@@ -3076,6 +3181,10 @@
                 transformPalestra(win, hWnd);
             } else if (dialogNum === 110) {
                 transformPagella(win, hWnd);
+            } else if (dialogNum === 120) {
+                transformCellulare(win, hWnd);
+            } else if (dialogNum === 121 || dialogNum === 123) {
+                transformShop(win, hWnd);
             } else if ((dialogNum >= 100 && dialogNum <= 107) || dialogNum === 96) {
                 transformEventBeatdown(win, hWnd);
             } else if (dialogNum === 16) {
@@ -3087,10 +3196,12 @@
             }
         } catch (err) {
             console.error('[dialogBox] Error transforming dialog ' + dialogNum + ':', err);
+            transformGeneric(win, hWnd);
         }
 
         win.querySelectorAll('.dlg_item').forEach(element => {
-            const hMenu = Number(element.className.match(/\d+/));
+            const m = element.className.match(/control(\d+)/) || element.className.match(/\d+/);
+            const hMenu = m ? Number(m[1] || m[0]) : -1;
             const dataClass = element.getAttribute('data-class');
             if (hMenu !== -1 && dataClass && typeof _AllocateControl === 'function') {
                 const lpClassName = _malloc(128);
@@ -3126,6 +3237,7 @@
                 _activeWindowHwnd = null;
             }
         }
+        stopWaiting();
     }
 
     function loadString(uID, lpBuffer, cchBufferMax) {
@@ -3135,21 +3247,31 @@
     }
 
     async function loadStringResources() {
+        if (_stringsCache && Object.keys(_stringsCache).length > 0) {
+            window.strings = _stringsCache;
+            exports.strings = _stringsCache;
+            return;
+        }
         try {
             const response = await fetch(`${RESOURCE_BASE}/strings/strings.json`);
             window.strings = await response.json();
+            _stringsCache = window.strings;
             exports.strings = window.strings;
         } catch (e) {
             console.warn("loadStringResources failed:", e);
+            window.strings = window.strings || {};
         }
     }
 
     async function preload() {
+        if (_bitmapsListCache) {
+            return;
+        }
         try {
             const response = await fetch(`${RESOURCE_BASE}/bitmaps/list.json`);
             const json = await response.json();
-            const list = Array.isArray(json) ? json : (json.data || []);
-            list.forEach(element => {
+            _bitmapsListCache = Array.isArray(json) ? json : (json.data || []);
+            _bitmapsListCache.forEach(element => {
                 const img = new Image();
                 img.src = `${RESOURCE_BASE}/bitmaps/${element}`;
             });
@@ -3185,7 +3307,9 @@
             target = target.closest('.dlg_item');
         }
 
-        const match = target.className && typeof target.className === 'string' ? target.className.match(/\d+/) : null;
+        const match = target.className && typeof target.className === 'string' 
+            ? (target.className.match(/control(\d+)/) || target.className.match(/\d+/)) 
+            : null;
 
         // Determine target window handle: prioritize the window containing the clicked element
         let targetHwnd = _activeWindowHwnd;
@@ -3200,11 +3324,13 @@
             }
         }
 
+        const controlId = match ? Number(match[1] || match[0]) : null;
+
         switch (event.type) {
             case 'click':
-                if (match && targetHwnd !== null && targetHwnd !== undefined) {
+                if (controlId !== null && targetHwnd !== null && targetHwnd !== undefined) {
                     const message = WM_COMMAND;
-                    const wParam = Number(match[0]);
+                    const wParam = controlId;
                     const lParam = calculateClickPosition(event);
                     if (typeof _PostMessage === 'function') {
                         _PostMessage(targetHwnd, message, wParam, lParam);
@@ -3212,9 +3338,9 @@
                 }
                 break;
             case 'input':
-                if (match && !isCheckbox(target) && targetHwnd !== null && targetHwnd !== undefined) {
+                if (controlId !== null && !isCheckbox(target) && targetHwnd !== null && targetHwnd !== undefined) {
                     const message = WM_COMMAND;
-                    const wParam = Number(match[0]);
+                    const wParam = controlId;
                     const lParam = 0;
                     if (typeof _PostMessage === 'function') {
                         _PostMessage(targetHwnd, message, wParam, lParam);
@@ -3230,9 +3356,9 @@
                         if (typeof _PostMessage === 'function') {
                             _PostMessage(targetHwnd, message, wParam, lParam);
                         }
-                    } else if (target.nodeName === "BUTTON" && event.keyCode === 13 && match) {
+                    } else if (target.nodeName === "BUTTON" && event.keyCode === 13 && controlId !== null) {
                         const message = WM_COMMAND;
-                        const wParam = Number(match[0]);
+                        const wParam = controlId;
                         const lParam = 0;
                         if (typeof _PostMessage === 'function') {
                             _PostMessage(targetHwnd, message, wParam, lParam);
@@ -3255,7 +3381,6 @@
 
     function startGame() {
         if (_gameStarted) return;
-        _gameStarted = true;
         console.log('[Tabboz] Starting game engine...');
 
         function tryLaunch(attemptsLeft) {
@@ -3265,16 +3390,18 @@
 
             if (startupFn) {
                 try {
+                    _gameStarted = true;
                     console.log('[Tabboz] Executing _WinMainStartup()');
                     startupFn();
                     return;
                 } catch (e) {
                     console.warn('[Tabboz] WinMainStartup execution deferred:', e);
+                    _gameStarted = false;
                 }
             }
 
             if (attemptsLeft > 0) {
-                setTimeout(() => tryLaunch(attemptsLeft - 1), 100);
+                setTimeout(() => tryLaunch(attemptsLeft - 1), 60);
             } else {
                 console.error('[Tabboz] Fatal: Could not launch WinMainStartup after retries.');
                 const loadingScreen = document.getElementById('loading-screen');
@@ -3282,7 +3409,7 @@
             }
         }
 
-        setTimeout(() => tryLaunch(50), 50);
+        setTimeout(() => tryLaunch(80), 30);
     }
 
     function addDesktopIcon(name, icon, title) {
@@ -3290,7 +3417,7 @@
         _desktopIconAdded = true;
         setTimeout(() => {
             startGame();
-        }, 10);
+        }, 20);
     }
     function makeDraggable(element) {}
 
