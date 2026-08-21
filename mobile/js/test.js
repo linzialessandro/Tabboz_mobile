@@ -106,6 +106,25 @@ test('rejects oversized payloads and non-string values', () => {
     assert.ok(validateSaveData(nested));
 });
 
+test('sanitizeItalianText decodes CP1252 escapes', () => {
+    assert.strictEqual(TM.ui.sanitizeItalianText('perch\\xE9'), 'perché');
+    assert.strictEqual(TM.ui.sanitizeItalianText('l\\x27isola'), "l'isola");
+});
+
+test('parseWindowHwnd only accepts winN ids', () => {
+    assert.strictEqual(TM.ui.parseWindowHwnd({ id: 'win12' }), 12);
+    assert.strictEqual(TM.ui.parseWindowHwnd({ id: 'win' }), null);
+    assert.strictEqual(TM.ui.parseWindowHwnd({ id: 'save-manager-modal' }), null);
+    assert.strictEqual(TM.ui.parseWindowHwnd({ id: 'wall3' }), null);
+});
+
+test('isCommandSource ignores static dlg_items', () => {
+    const btn = { tagName: 'BUTTON', getAttribute: () => 'BorBtn' };
+    const stat = { tagName: 'DIV', classList: { contains: () => true }, getAttribute: () => 'STATIC' };
+    assert.strictEqual(TM.ui.isCommandSource(btn), true);
+    assert.strictEqual(TM.ui.isCommandSource(stat), false);
+});
+
 test('extractControlId reads only .controlN', () => {
     const id = TM.ui.extractControlId;
     assert.strictEqual(id('dlg_item control101 mobile-btn'), 101);

@@ -15,6 +15,10 @@
     const RESOURCE_BASE = TM.RESOURCE_BASE;
     const WM_COMMAND = TM.WM.COMMAND;
     const stopWaiting = () => ui.stopWaiting();
+    const postCommand = ui.postCommand;
+    const markBound = ui.markBound;
+    const bindSelect = ui.bindSelect;
+    const sanitizeItalianText = ui.sanitizeItalianText;
 
     function transformDashboard(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
@@ -221,14 +225,9 @@
         startBtn.innerHTML = '⚡ TOCCA PER GIOCARE ⚡';
 
         attachButtonHandler(startBtn, 202, hWnd);
+        markBound(container);
         container.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : TM.getActiveHwnd();
-            if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
-                _PostMessage(targetHwnd, WM_COMMAND, 202, 0);
-            }
-            stopWaiting();
+            if (e.target !== startBtn) startBtn.click();
         });
         container.appendChild(startBtn);
 
@@ -244,8 +243,8 @@
         const radioClose = body.querySelector('input.control101') || body.querySelector('input[type="radio"]');
         const radioShutdown = body.querySelector('input.control102');
         const btnHelp = body.querySelector('button.control110') || body.querySelector('.control110');
-        const btnCancel = getButtonCancel(body) || body.querySelector('button.control2') || body.querySelector('.control2');
-        const btnOk = getButtonOk(body) || body.querySelector('button.control1') || body.querySelector('.control1');
+        const btnCancel = getButtonCancel(body) || body.querySelector('button.control2') || body.querySelector('button.control2');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1') || body.querySelector('button.control1');
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-exit-view';
@@ -321,16 +320,10 @@
             opt2.classList.toggle('active', !isOpt1);
             opt1.querySelector('.exit-radio-indicator').classList.toggle('checked', isOpt1);
             opt2.querySelector('.exit-radio-indicator').classList.toggle('checked', !isOpt1);
-
-            const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : TM.getActiveHwnd();
-            if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
-                _PostMessage(targetHwnd, WM_COMMAND, controlId, 0);
-            }
-            stopWaiting();
         }
 
-        opt1.addEventListener('click', () => selectOption(101));
-        opt2.addEventListener('click', () => selectOption(102));
+        bindSelect(opt1, 101, hWnd, () => selectOption(101));
+        bindSelect(opt2, 102, hWnd, () => selectOption(102));
 
         // Help button
         if (btnHelp) {

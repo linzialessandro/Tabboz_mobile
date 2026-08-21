@@ -15,6 +15,10 @@
     const RESOURCE_BASE = TM.RESOURCE_BASE;
     const WM_COMMAND = TM.WM.COMMAND;
     const stopWaiting = () => ui.stopWaiting();
+    const postCommand = ui.postCommand;
+    const markBound = ui.markBound;
+    const bindSelect = ui.bindSelect;
+    const sanitizeItalianText = ui.sanitizeItalianText;
 
     function transformCellulare(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
@@ -28,7 +32,7 @@
         const btnCompra = body.querySelector('.control110');
         const btnVendi = body.querySelector('.control111');
         const btnRicarica = body.querySelector('.control112');
-        const btnOk = getButtonOk(body) || body.querySelector('.control1');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1');
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-phone-view';
@@ -166,8 +170,8 @@
         if (!body) return;
 
         const soldiEl = body.querySelector('.control104');
-        const btnOk = getButtonOk(body) || body.querySelector('.control1');
-        const btnCancel = getButtonCancel(body) || body.querySelector('.control2');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1');
+        const btnCancel = getButtonCancel(body) || body.querySelector('button.control2');
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-compra-cell-view';
@@ -291,26 +295,11 @@
             card.appendChild(middleRow);
 
             // Whole card selection interaction
-            card.onclick = (event) => {
-
-                if (event) { event.preventDefault(); event.stopPropagation(); }
+            bindSelect(card, item.cmd, hWnd, () => {
                 productsList.querySelectorAll('.phone-product-card').forEach(c => c.classList.remove('selected'));
                 card.classList.add('selected');
                 radio.checked = true;
-                if (typeof _PostMessage === 'function') {
-                    _PostMessage(hWnd, WM_COMMAND, item.cmd, 0);
-                }
-                stopWaiting();
-            };
-
-            radio.onchange = () => {
-                productsList.querySelectorAll('.phone-product-card').forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
-                if (typeof _PostMessage === 'function') {
-                    _PostMessage(hWnd, WM_COMMAND, item.cmd, 0);
-                }
-                stopWaiting();
-            };
+            });
 
             productsList.appendChild(card);
         });
@@ -346,8 +335,8 @@
 
         const soldiEl = body.querySelector('.control104');
         const simAttivaEl = body.querySelector('.control105');
-        const btnOk = getButtonOk(body) || body.querySelector('.control1');
-        const btnCancel = getButtonCancel(body) || body.querySelector('.control2');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1');
+        const btnCancel = getButtonCancel(body) || body.querySelector('button.control2');
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-ricarica-cell-view';
@@ -477,18 +466,11 @@
             `;
             simRow.prepend(simRadio);
 
-            simRow.onclick = (event) => {
-
-
-                if (event) { event.preventDefault(); event.stopPropagation(); }
+            bindSelect(simRow, op.sim.cmd, hWnd, () => {
                 deselectAllOptions();
                 simRow.classList.add('selected');
                 simRadio.checked = true;
-                if (typeof _PostMessage === 'function') {
-                    _PostMessage(hWnd, WM_COMMAND, op.sim.cmd, 0);
-                }
-                stopWaiting();
-            };
+            });
             optionsGroup.appendChild(simRow);
 
             // Options: Recharges
@@ -509,18 +491,11 @@
                 `;
                 recRow.prepend(recRadio);
 
-                recRow.onclick = (event) => {
-
-
-                    if (event) { event.preventDefault(); event.stopPropagation(); }
+                bindSelect(recRow, rec.cmd, hWnd, () => {
                     deselectAllOptions();
                     recRow.classList.add('selected');
                     recRadio.checked = true;
-                    if (typeof _PostMessage === 'function') {
-                        _PostMessage(hWnd, WM_COMMAND, rec.cmd, 0);
-                    }
-                    stopWaiting();
-                };
+                });
                 optionsGroup.appendChild(recRow);
             });
 

@@ -8,6 +8,8 @@
     'use strict';
 
     const WM_COMMAND = TM.WM.COMMAND;
+    const BOUND_ATTR = 'data-tm-bound';
+    const LABEL_LOCK_ATTR = 'data-tm-label-lock';
 
     function escapeHtml(value) {
         if (typeof value !== 'string') value = String(value == null ? '' : value);
@@ -50,17 +52,69 @@
     function getButtonOk(body) {
         if (!body) return null;
         return body.querySelector('button.control1')
-            || body.querySelector('button.button_ok')
-            || body.querySelector('.button_ok')
-            || body.querySelector('.control1');
+            || body.querySelector('button.button_ok');
     }
 
     function getButtonCancel(body) {
         if (!body) return null;
         return body.querySelector('button.control2')
-            || body.querySelector('button.button_cancel')
-            || body.querySelector('.button_cancel')
-            || body.querySelector('.control2');
+            || body.querySelector('button.button_cancel');
+    }
+
+    function sanitizeItalianText(str) {
+        if (!str || typeof str !== 'string') return str;
+        return str
+            .replace(/\\x92/g, "'")
+            .replace(/\\x91/g, "'")
+            .replace(/\\x93/g, '"')
+            .replace(/\\x94/g, '"')
+            .replace(/\\x85/g, '...')
+            .replace(/\\x80/g, '€')
+            .replace(/\\xF9/gi, 'ù')
+            .replace(/\\xE9/gi, 'é')
+            .replace(/\\xE8/gi, 'è')
+            .replace(/\\xE0/gi, 'à')
+            .replace(/\\xF2/gi, 'ò')
+            .replace(/\\xEC/gi, 'ì')
+            .replace(/\\xB0/gi, '°')
+            .replace(/\\xA9/gi, '©')
+            .replace(/\\xAE/gi, '®')
+            .replace(/\\x([0-9A-Fa-f]{2})/g, (match, hex) => {
+                const code = parseInt(hex, 16);
+                return Number.isNaN(code) ? match : String.fromCharCode(code);
+            });
+    }
+
+    function markBound(el) {
+        if (el && el.setAttribute) el.setAttribute(BOUND_ATTR, '1');
+        return el;
+    }
+
+    function isBound(el) {
+        return !!(el && el.closest && el.closest('[' + BOUND_ATTR + ']'));
+    }
+
+    function lockLabel(el) {
+        if (el && el.setAttribute) el.setAttribute(LABEL_LOCK_ATTR, '1');
+        return el;
+    }
+
+    function isLabelLocked(el) {
+        return !!(el && el.getAttribute && el.getAttribute(LABEL_LOCK_ATTR));
+    }
+
+    function parseWindowHwnd(el) {
+        if (!el || !el.id) return null;
+        const match = String(el.id).match(/^win(\d+)$/);
+        return match ? Number(match[1]) : null;
+    }
+
+    function existingLabelText(control) {
+        if (!control) return '';
+        const parent = control.parentElement;
+        const label = parent && parent.querySelector && parent.querySelector('label');
+        const text = label ? label.innerText : '';
+        return (text || '').replace(/:$/, '').trim();
     }
 
     function stopWaiting() {
@@ -90,11 +144,34 @@
 
     function attachButtonHandler(button, controlId, winHwnd) {
         if (!button) return button;
+        markBound(button);
+        lockLabel(button);
         button.onclick = (event) => {
             swallow(event);
             postCommand(winHwnd, controlId);
         };
         return button;
+    }
+
+    function bindSelect(card, controlId, winHwnd, after) {
+        if (!card || controlId === null || controlId === undefined) return card;
+        markBound(card);
+        card.addEventListener('click', (event) => {
+            swallow(event);
+            if (typeof after === 'function') after(event);
+            postCommand(winHwnd, controlId);
+        });
+        return card;
+    }
+
+    function isCommandSource(el) {
+        if (!el || !el.tagName) return false;
+        const tag = el.tagName;
+        if (tag === 'BUTTON' || tag === 'SELECT') return true;
+        if (tag === 'INPUT') return true;
+        if (tag === 'IMG' && el.classList && el.classList.contains('dlg_item')) return true;
+        const dataClass = el.getAttribute && el.getAttribute('data-class');
+        return dataClass === 'BUTTON' || dataClass === 'BorBtn';
     }
 
     function setButton(button, { id, hWnd, label, className }) {
@@ -182,11 +259,20 @@
         resetElement,
         getButtonOk,
         getButtonCancel,
+        sanitizeItalianText,
+        markBound,
+        isBound,
+        lockLabel,
+        isLabelLocked,
+        parseWindowHwnd,
+        existingLabelText,
         stopWaiting,
         getActiveHwnd,
         postCommand,
         swallow,
         attachButtonHandler,
+        bindSelect,
+        isCommandSource,
         setButton,
         el,
         miniStat,

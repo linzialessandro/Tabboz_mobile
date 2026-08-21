@@ -12,7 +12,7 @@
  * Distributed under the terms of the GNU General Public License v3.0.
  *
  * This file is the ABI the WASM engine talks to (`dialogBox`, `waitEvent`,
- * `setDlgItemText`, ...). Presentation lives in `screens.js`.
+ * `setDlgItemText`, ...). Presentation lives in `js/screens/`.
  */
 ((exports) => {
     'use strict';
@@ -28,6 +28,7 @@
     let _highestZIndex = 50;
     let _gameStarted = false;
     let _menuClickListenerRegistered = false;
+    let _eventListenerRegistered = false;
 
     const SM_CXSCREEN = TM.SM.CXSCREEN;
     const SM_CYSCREEN = TM.SM.CYSCREEN;
@@ -68,29 +69,7 @@
     window.Audio.prototype = OriginalAudio.prototype;
     window.Audio.original = OriginalAudio;
 
-    function sanitizeItalianText(str) {
-        if (!str || typeof str !== 'string') return str;
-        return str
-            .replace(/\\x92/g, "'")
-            .replace(/\\x91/g, "'")
-            .replace(/\\x93/g, '"')
-            .replace(/\\x94/g, '"')
-            .replace(/\\x85/g, '...')
-            .replace(/\\x80/g, '€')
-            .replace(/\\xF9/gi, 'ù')
-            .replace(/\\xE9/gi, 'é')
-            .replace(/\\xE8/gi, 'è')
-            .replace(/\\xE0/gi, 'à')
-            .replace(/\\xF2/gi, 'ò')
-            .replace(/\\xEC/gi, 'ì')
-            .replace(/\\xB0/gi, '°')
-            .replace(/\\xA9/gi, '©')
-            .replace(/\\xAE/gi, '®')
-            .replace(/\\x([0-9A-Fa-f]{2})/g, (match, hex) => {
-                const code = parseInt(hex, 16);
-                return Number.isNaN(code) ? match : String.fromCharCode(code);
-            });
-    }
+    const sanitizeItalianText = ui.sanitizeItalianText;
 
     function safeResourceName(name) {
         return String(name || '').replace(/[^a-zA-Z0-9._-]/g, '');
@@ -294,20 +273,24 @@
         }
     }
 
+    function gameWindows() {
+        return Array.from(document.querySelectorAll('#screen .window[id^="win"]'));
+    }
+
     function setActiveWindow(hWnd) {
         _activeWindowHwnd = hWnd;
         _highestZIndex += 10;
-        const activeWin = document.querySelector(`#win${hWnd}`);
+        const activeWin = document.getElementById('win' + hWnd);
         if (!activeWin) return;
 
         const isMsgBox = activeWin.classList.contains('messagebox');
-        const nonMsgWindows = Array.from(document.querySelectorAll('.window:not(.messagebox)'));
-        const topRegularWin = nonMsgWindows.length > 0 ? nonMsgWindows[nonMsgWindows.length - 1] : null;
+        const regular = gameWindows().filter((w) => !w.classList.contains('messagebox'));
+        const topRegularWin = regular.length > 0 ? regular[regular.length - 1] : null;
 
-        document.querySelectorAll('.window').forEach((w) => {
+        gameWindows().forEach((w) => {
             if (w === activeWin) {
                 w.classList.add('active-window');
-                w.style.zIndex = _highestZIndex;
+                w.style.zIndex = String(_highestZIndex);
                 w.style.display = isMsgBox ? 'block' : 'flex';
                 const tb = w.querySelector('.title-bar');
                 if (tb) tb.classList.remove('inactive');
@@ -397,6 +380,7 @@
         const control = document.querySelector(`#win${hWnd} .control${nIDDlgItem}`);
         if (!control) return false;
         const text = sanitizeItalianText(UTF8ToString(lpString));
+        if (ui.isLabelLocked(control)) return true;
         if (control.tagName === 'INPUT') {
             if (control.type === 'radio') {
                 const label = control.parentNode && control.parentNode.querySelector('label');
@@ -503,6 +487,7 @@
 
         const closeBtn = win.querySelector('.control61536, .close-btn');
         if (closeBtn) {
+            ui.markBound(closeBtn);
             closeBtn.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -519,9 +504,10 @@
         c.classList.add('messagebox');
 
         const icon = c.querySelector('img');
-        if (uType & 0x00000020) icon.src = `${RESOURCE_BASE}/icons/novantotto/102.png`;
-        else if (uType & 0x00000010) icon.src = `${RESOURCE_BASE}/icons/novantotto/103.png`;
-        else if (uType & 0x00000030) icon.src = `${RESOURCE_BASE}/icons/novantotto/101.png`;
+        const iconType = uType & 0xF0;
+        if (iconType === 0x30) icon.src = `${RESOURCE_BASE}/icons/novantotto/101.png`;
+        else if (iconType === 0x20) icon.src = `${RESOURCE_BASE}/icons/novantotto/102.png`;
+        else if (iconType === 0x10) icon.src = `${RESOURCE_BASE}/icons/novantotto/103.png`;
         else icon.src = `${RESOURCE_BASE}/icons/novantotto/104.png`;
 
         const btn1 = c.querySelector('.control1');
@@ -645,11 +631,11 @@
         if (wall) wall.remove();
         if (win) win.remove();
 
-        const remainingWindows = Array.from(document.querySelectorAll('.window'));
+        const remainingWindows = gameWindows();
         if (remainingWindows.length > 0) {
             const topWin = remainingWindows[remainingWindows.length - 1];
-            const m = topWin.id && topWin.id.match(/\d+/);
-            if (m) setActiveWindow(Number(m[0]));
+            const hwnd = ui.parseWindowHwnd(topWin);
+            if (hwnd !== null) setActiveWindow(hwnd);
         } else {
             _activeWindowHwnd = null;
         }
@@ -710,6 +696,8 @@
     }
 
     function eventListenerSetup() {
+        if (_eventListenerRegistered) return;
+        _eventListenerRegistered = true;
         document.body.addEventListener('click', eventHandler);
         document.body.addEventListener('keydown', eventHandler);
         document.body.addEventListener('input', eventHandler);
@@ -718,6 +706,7 @@
     function eventHandler(event) {
         if (isSaveUi(event.target)) return;
         if (event.defaultPrevented) return;
+        if (ui.isBound(event.target)) return;
 
         let target = event.target;
         if (target.tagName === 'LABEL' && target.htmlFor) {
@@ -727,16 +716,16 @@
             target = target.closest('.dlg_item');
         }
 
+        if (event.type === 'click' && !ui.isCommandSource(target)) return;
+
         const controlId = ui.extractControlId(target.className);
 
         let targetHwnd = _activeWindowHwnd;
-        const clickedWin = target.closest ? target.closest('.window') : null;
-        if (clickedWin && clickedWin.id) {
-            const m = clickedWin.id.match(/\d+/);
-            if (m) {
-                targetHwnd = Number(m[0]);
-                if (targetHwnd !== _activeWindowHwnd) setActiveWindow(targetHwnd);
-            }
+        const clickedWin = target.closest ? target.closest('#screen .window[id^="win"]') : null;
+        const parsed = ui.parseWindowHwnd(clickedWin);
+        if (parsed !== null) {
+            targetHwnd = parsed;
+            if (targetHwnd !== _activeWindowHwnd) setActiveWindow(targetHwnd);
         }
 
         switch (event.type) {

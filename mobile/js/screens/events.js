@@ -15,13 +15,17 @@
     const RESOURCE_BASE = TM.RESOURCE_BASE;
     const WM_COMMAND = TM.WM.COMMAND;
     const stopWaiting = () => ui.stopWaiting();
+    const postCommand = ui.postCommand;
+    const markBound = ui.markBound;
+    const bindSelect = ui.bindSelect;
+    const sanitizeItalianText = ui.sanitizeItalianText;
 
     function transformEventBeatdown(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
         const img = body.querySelector('img.dlg_item') || body.querySelector('canvas') || body.querySelector('img');
-        const btnOk = getButtonOk(body) || body.querySelector('.control1') || body.querySelector('.control2') || body.querySelector('button');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1') || body.querySelector('button');
 
         // Extract and sort all statics by vertical position
         const statics = Array.from(body.querySelectorAll('.control[data-class="BorStatic"], .control[data-class="STATIC"], .dlg_item[data-class="BorStatic"], .dlg_item[data-class="STATIC"], div[data-class="BorStatic"], div[data-class="STATIC"], .borstatic'))

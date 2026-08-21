@@ -6,7 +6,7 @@
 (function (root) {
     'use strict';
     root.TabbozMobile = root.TabbozMobile || {};
-    root.TabbozMobile.ASSET_VERSION = '32';
+    root.TabbozMobile.ASSET_VERSION = '33';
 
     var inBrowser = typeof document !== 'undefined' && document.currentScript;
     if (!inBrowser) return;
@@ -54,6 +54,9 @@
         el.onload = next;
         el.onerror = function () {
             console.error('[Tabboz] failed to load', el.src);
+            var loading = document.getElementById('loading-screen');
+            var text = loading && loading.querySelector('.loading-text');
+            if (text) text.textContent = 'Errore di caricamento. Ricarica la pagina.';
         };
         document.body.appendChild(el);
     }

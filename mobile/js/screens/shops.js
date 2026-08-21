@@ -15,6 +15,10 @@
     const RESOURCE_BASE = TM.RESOURCE_BASE;
     const WM_COMMAND = TM.WM.COMMAND;
     const stopWaiting = () => ui.stopWaiting();
+    const postCommand = ui.postCommand;
+    const markBound = ui.markBound;
+    const bindSelect = ui.bindSelect;
+    const sanitizeItalianText = ui.sanitizeItalianText;
 
     function transformTabacchi(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
@@ -23,8 +27,8 @@
         const soldiEl = body.querySelector('.control104') || body.querySelector('.control150');
         const sizzeEl = body.querySelector('.control105');
         const msgEl = body.querySelector('.control106');
-        const btnOk = getButtonOk(body) || body.querySelector('.control1');
-        const btnCancel = getButtonCancel(body) || body.querySelector('.control2');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1');
+        const btnCancel = getButtonCancel(body) || body.querySelector('button.control2');
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-tabacchi-view';
@@ -54,17 +58,10 @@
             packCard.className = 'pack-card';
             packCard.appendChild(pack);
             if (controlId !== null) {
-                packCard.onclick = (event) => {
-
-                    if (event) { event.preventDefault(); event.stopPropagation(); }
+                bindSelect(packCard, controlId, hWnd, () => {
                     packsGrid.querySelectorAll('.pack-card').forEach(c => c.classList.remove('selected'));
                     packCard.classList.add('selected');
-                    const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : TM.getActiveHwnd();
-                    if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
-                        _PostMessage(targetHwnd, WM_COMMAND, controlId, 0);
-                        stopWaiting();
-                    }
-                };
+                });
             }
             packsGrid.appendChild(packCard);
         });
@@ -98,7 +95,7 @@
         if (!body) return;
 
         const soldiEl = body.querySelector('.control120') || body.querySelector('.control104') || body.querySelector('.control150');
-        const btnOk = getButtonOk(body) || body.querySelector('.control1');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1');
 
         const buttons = Array.from(body.querySelectorAll('button.dlg_item')).filter(b => !b.classList.contains('control1'));
 
@@ -186,7 +183,7 @@
         const btnRipara = body.querySelector('.control103');
         const btnParcheggia = body.querySelector('.control105');
         const btnBenza = body.querySelector('.control106');
-        const btnOk = getButtonOk(body) || body.querySelector('.control1');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1');
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-scooter-view';
@@ -233,8 +230,8 @@
 
         const soldiEl = body.querySelector('.control120') || body.querySelector('.control104');
         const figoEl = body.querySelector('.control121') || body.querySelector('.control105');
-        const btnOk = getButtonOk(body) || body.querySelector('.control1');
-        const btnCancel = getButtonCancel(body) || body.querySelector('.control2');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1');
+        const btnCancel = getButtonCancel(body) || body.querySelector('button.control2');
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-shop-view';
@@ -320,19 +317,11 @@
 
             card.appendChild(info);
 
-            card.onclick = (event) => {
-
-
-                if (event) { event.preventDefault(); event.stopPropagation(); }
+            bindSelect(card, radioId, hWnd, () => {
                 radio.checked = true;
-                const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : TM.getActiveHwnd();
-                if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
-                    _PostMessage(targetHwnd, WM_COMMAND, radioId, 0);
-                    stopWaiting();
-                }
                 productsList.querySelectorAll('.shop-product-card').forEach(c => c.classList.remove('selected'));
                 card.classList.add('selected');
-            };
+            });
 
             if (i === 0) {
                 radio.checked = true;
@@ -453,6 +442,7 @@
             workoutCard.appendChild(subtitle);
 
             workoutCard.style.cursor = 'pointer';
+            markBound(workoutCard);
             workoutCard.addEventListener('click', (e) => {
                 if (e.target !== btnWorkout) {
                     btnWorkout.click();
@@ -495,6 +485,7 @@
             attachButtonHandler(btnMese, 115, hWnd);
             card.appendChild(btnMese);
 
+            markBound(card);
             card.addEventListener('click', (e) => {
                 if (e.target !== btnMese) {
                     btnMese.click();
@@ -526,6 +517,7 @@
             attachButtonHandler(btnSeiMesi, 116, hWnd);
             card.appendChild(btnSeiMesi);
 
+            markBound(card);
             card.addEventListener('click', (e) => {
                 if (e.target !== btnSeiMesi) {
                     btnSeiMesi.click();
@@ -556,6 +548,7 @@
             attachButtonHandler(btnAnno, 117, hWnd);
             card.appendChild(btnAnno);
 
+            markBound(card);
             card.addEventListener('click', (e) => {
                 if (e.target !== btnAnno) {
                     btnAnno.click();
@@ -604,6 +597,7 @@
             attachButtonHandler(btnLampada, 111, hWnd);
             lampCard.appendChild(btnLampada);
 
+            markBound(lampCard);
             lampCard.addEventListener('click', (e) => {
                 if (e.target !== btnLampada) {
                     btnLampada.click();
@@ -636,8 +630,8 @@
 
         const img = body.querySelector('img.dlg_item') || body.querySelector('canvas') || body.querySelector('img');
         const soldiEl = body.querySelector('.control104') || body.querySelector('.control150');
-        const btnOk = getButtonOk(body) || body.querySelector('.control1');
-        const btnCancel = getButtonCancel(body) || body.querySelector('.control2');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1');
+        const btnCancel = getButtonCancel(body) || body.querySelector('button.control2');
         const buttons = Array.from(body.querySelectorAll('button.dlg_item')).filter(b => !b.classList.contains('control1') && !b.classList.contains('control2'));
         const statics = Array.from(body.querySelectorAll('.control[data-class="STATIC"], .control[data-class="BorStatic"], .dlg_item[data-class="STATIC"]')).filter(s => s !== soldiEl);
 
@@ -714,8 +708,8 @@
         if (!body) return;
 
         const soldiEl = body.querySelector('.control104');
-        const btnOk = getButtonOk(body) || body.querySelector('.control1');
-        const btnCancel = getButtonCancel(body) || body.querySelector('.control2');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1');
+        const btnCancel = getButtonCancel(body) || body.querySelector('button.control2');
 
         const radios = Array.from(body.querySelectorAll('input[type="radio"], input.bwcc'));
         const images = Array.from(body.querySelectorAll('img.dlg_item, img.ws_border')).filter(img => !img.src.includes('SCOOTER.gif'));
@@ -765,20 +759,11 @@
             }
             card.appendChild(info);
 
-            card.onclick = (event) => {
-
-
-                if (event) { event.preventDefault(); event.stopPropagation(); }
+            bindSelect(card, ui.extractControlId(radio.className), hWnd, () => {
                 radio.checked = true;
                 modelsGrid.querySelectorAll('.scooter-model-card').forEach(c => c.classList.remove('selected'));
                 card.classList.add('selected');
-                const match = radio.className.match(/\d+/);
-                const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : TM.getActiveHwnd();
-                if (match && typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
-                    _PostMessage(targetHwnd, WM_COMMAND, Number(match[0]), 0);
-                    stopWaiting();
-                }
-            };
+            });
             modelsGrid.appendChild(card);
         });
         container.appendChild(modelsGrid);
@@ -840,7 +825,7 @@
         const btnMarm = body.querySelector('.control122');
         const btnPist = body.querySelector('.control123');
         const btnFilt = body.querySelector('.control124');
-        const btnOk = getButtonOk(body) || body.querySelector('.control1');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1');
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-trucca-scooter-view';

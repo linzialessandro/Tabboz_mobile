@@ -15,6 +15,10 @@
     const RESOURCE_BASE = TM.RESOURCE_BASE;
     const WM_COMMAND = TM.WM.COMMAND;
     const stopWaiting = () => ui.stopWaiting();
+    const postCommand = ui.postCommand;
+    const markBound = ui.markBound;
+    const bindSelect = ui.bindSelect;
+    const sanitizeItalianText = ui.sanitizeItalianText;
 
     function transformLavoro(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
@@ -25,7 +29,7 @@
         const soldiEl = body.querySelector('.control104');
         const stipendioEl = body.querySelector('.control106');
         const impegnoEl = body.querySelector('.control107');
-        const btnOk = getButtonOk(body) || body.querySelector('.control1');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1');
 
         const btnCercaLavoro = body.querySelector('.control110');
         const btnLicenziati = body.querySelector('.control111');
@@ -240,16 +244,9 @@
                 optCard.appendChild(opt.input);
 
                 // Option touch handler: clicking anywhere toggles the checkbox
-                optCard.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
+                bindSelect(optCard, opt.controlId, hWnd, () => {
                     opt.input.checked = !opt.input.checked;
                     optCard.classList.toggle('selected', opt.input.checked);
-                    const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : TM.getActiveHwnd();
-                    if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
-                        _PostMessage(targetHwnd, WM_COMMAND, opt.controlId, 0);
-                        stopWaiting();
-                    }
                 });
 
                 optionsList.appendChild(optCard);

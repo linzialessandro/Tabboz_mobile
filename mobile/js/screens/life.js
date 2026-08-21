@@ -15,6 +15,10 @@
     const RESOURCE_BASE = TM.RESOURCE_BASE;
     const WM_COMMAND = TM.WM.COMMAND;
     const stopWaiting = () => ui.stopWaiting();
+    const postCommand = ui.postCommand;
+    const markBound = ui.markBound;
+    const bindSelect = ui.bindSelect;
+    const sanitizeItalianText = ui.sanitizeItalianText;
 
     function transformScuola(win, hWnd) {
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
@@ -28,7 +32,7 @@
         const btnStudia = body.querySelector('.control103');
         const btnMinaccia = body.querySelector('.control102');
         const btnCorrompi = body.querySelector('.control101');
-        const btnOk = getButtonOk(body) || body.querySelector('.control1');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1');
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-scuola-view';
@@ -79,7 +83,7 @@
             const label = document.createElement('label');
             label.htmlFor = `scuola_radio_${radioId}`;
             label.className = 'subject-name';
-            label.innerText = subjectNames[i - 1];
+            label.innerText = ui.existingLabelText(radio) || subjectNames[i - 1];
             card.appendChild(label);
 
             if (grade) {
@@ -91,21 +95,11 @@
                 card.appendChild(gradeBadge);
             }
 
-            card.onclick = (event) => {
-
-
-                if (event) { event.preventDefault(); event.stopPropagation(); }
-                if (radio) {
-                    radio.checked = true;
-                    const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : TM.getActiveHwnd();
-                    if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
-                        _PostMessage(targetHwnd, WM_COMMAND, radioId, 0);
-                        stopWaiting();
-                    }
-                    subjectList.querySelectorAll('.scuola-subject-card').forEach(c => c.classList.remove('selected'));
-                    card.classList.add('selected');
-                }
-            };
+            bindSelect(card, radioId, hWnd, () => {
+                if (radio) radio.checked = true;
+                subjectList.querySelectorAll('.scuola-subject-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+            });
 
             if (i === 1) card.classList.add('selected');
             subjectList.appendChild(card);
@@ -150,10 +144,10 @@
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
-        const soldiEl = body.querySelector('.control110') || body.querySelector('.control104');
+        const soldiEl = body.querySelector('.control110');
         const descEl = body.querySelector('.control120');
-        const btnOk = getButtonOk(body) || body.querySelector('.control1');
-        const btnCancel = getButtonCancel(body) || body.querySelector('.control2');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1');
+        const btnCancel = getButtonCancel(body) || body.querySelector('button.control2');
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-disco-view';
@@ -193,24 +187,14 @@
 
             const label = document.createElement('label');
             label.htmlFor = `disco_radio_${radioId}`;
-            label.innerText = discoNames[i - 1] || `Discoteca ${i}`;
+            label.innerText = ui.existingLabelText(radio) || discoNames[i - 1] || ('Discoteca ' + i);
             card.appendChild(label);
 
-            card.onclick = (event) => {
-
-
-                if (event) { event.preventDefault(); event.stopPropagation(); }
-                if (radio) {
-                    radio.checked = true;
-                    const targetHwnd = (hWnd !== undefined && hWnd !== null) ? hWnd : TM.getActiveHwnd();
-                    if (typeof _PostMessage === 'function' && targetHwnd !== null && targetHwnd !== undefined) {
-                        _PostMessage(targetHwnd, WM_COMMAND, radioId, 0);
-                        stopWaiting();
-                    }
-                    discosList.querySelectorAll('.disco-card').forEach(c => c.classList.remove('selected'));
-                    card.classList.add('selected');
-                }
-            };
+            bindSelect(card, radioId, hWnd, () => {
+                if (radio) radio.checked = true;
+                discosList.querySelectorAll('.disco-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+            });
 
             if (i === 1) card.classList.add('selected');
             discosList.appendChild(card);
@@ -251,7 +235,7 @@
 
         const soldiEl = body.querySelector('.control104');
         const paghettaEl = body.querySelector('.control105');
-        const btnOk = getButtonOk(body) || body.querySelector('.control1');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1');
 
         const btn1 = body.querySelector('.control101');
         const btn2 = body.querySelector('.control102');
@@ -294,7 +278,7 @@
 
         const img = body.querySelector('img.control259') || body.querySelector('canvas') || body.querySelector('img');
         const repEl = body.querySelector('.control104');
-        const btnOk = getButtonOk(body) || body.querySelector('.control1');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1');
 
         const btn1 = body.querySelector('.control101');
         const btn2 = body.querySelector('.control102');
@@ -352,7 +336,7 @@
         const figoEl = body.querySelector('.control106');
         const affinitaEl = body.querySelector('.control107');
         const myFigoEl = body.querySelector('.control104');
-        const btnOk = getButtonOk(body) || body.querySelector('.control1');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1');
 
         const btnCerca = body.querySelector('.control110');
         const btnLascia = body.querySelector('.control111');
@@ -474,8 +458,8 @@
         if (!body) return;
 
         const img = body.querySelector('img.dlg_item') || body.querySelector('canvas') || body.querySelector('img');
-        const btnOk = getButtonOk(body) || body.querySelector('.control1');
-        const btnCancel = getButtonCancel(body) || body.querySelector('.control2');
+        const btnOk = getButtonOk(body) || body.querySelector('button.control1');
+        const btnCancel = getButtonCancel(body) || body.querySelector('button.control2');
         const buttons = Array.from(body.querySelectorAll('button.dlg_item')).filter(b => !b.classList.contains('control1') && !b.classList.contains('control2'));
         const statics = Array.from(body.querySelectorAll('.control[data-class="STATIC"], .control[data-class="BorStatic"], .dlg_item[data-class="STATIC"]'));
 
@@ -547,7 +531,7 @@
         const giudizioEl = body.querySelector('.control107');
 
         const btnCiProvo = body.querySelector('.control101');
-        const btnRitorno = getButtonCancel(body) || body.querySelector('.control2') || getButtonOk(body);
+        const btnRitorno = getButtonCancel(body) || body.querySelector('button.control2') || getButtonOk(body);
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-cerca-tipa-view';
