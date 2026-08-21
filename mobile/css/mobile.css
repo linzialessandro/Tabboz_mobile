@@ -2027,6 +2027,23 @@ button:active, input[type="button"]:active {
     border: 1px solid #fbcfe8;
 }
 
+.due-donne-header-card {
+    text-align: center;
+    padding: 6px 0;
+}
+
+.due-donne-badge {
+    display: inline-block;
+    background: #fef3c7;
+    color: #92400e;
+    font-weight: 800;
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid #fde68a;
+    letter-spacing: 0.5px;
+}
+
 .due-donne-actions-list {
     display: flex;
     flex-direction: column;

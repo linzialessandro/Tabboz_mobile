@@ -41,10 +41,10 @@
     let _bitmapsListCache = null;
 
     const KNOWN_DIALOGS = [
-        1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20,
+        1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
         70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
         80, 81, 82, 83, 84, 85, 86, 88, 89,
-        91, 92, 93, 94, 95, 96,
+        91, 92, 95, 96,
         100, 101, 102, 103, 104, 105, 106, 107, 110,
         120, 121, 123, 190, 191, 192,
         200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210,
@@ -374,7 +374,9 @@
         _activeWindowHwnd = hWnd;
         _highestZIndex += 10;
         const activeWin = document.querySelector(`#win${hWnd}`);
-        const isMsgBox = activeWin && activeWin.classList.contains("messagebox");
+        if (!activeWin) return;
+
+        const isMsgBox = activeWin.classList.contains("messagebox");
 
         // Find the topmost non-messagebox window
         const nonMsgWindows = Array.from(document.querySelectorAll(".window:not(.messagebox)"));
@@ -398,13 +400,14 @@
             }
         });
     }
+
     function showWindow(hWnd, show) {
         const win = document.querySelector('#win' + hWnd);
         const wall = document.querySelector('#wall' + hWnd);
         if (win != null) {
-            win.style.display = show ? 'block' : 'none';
+            const isMsgBox = win.classList.contains("messagebox");
+            win.style.display = show ? (isMsgBox ? 'block' : 'flex') : 'none';
             if (wall != null) wall.style.display = show ? 'block' : 'none';
-
             return true;
         }
         return false;
@@ -592,6 +595,20 @@
             const titleEl = win.querySelector('.title-bar-text');
             if (titleEl) titleEl.innerText = sanitizeItalianText(rawCap);
         }
+
+        // Ensure title bar close button sends IDCANCEL (2) or IDOK (1) to close cleanly
+        const closeBtn = win.querySelector('.control61536, .close-btn');
+        if (closeBtn) {
+            closeBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof _PostMessage === 'function') {
+                    _PostMessage(hWnd, WM_COMMAND, 2, 0);
+                }
+                stopWaiting();
+            };
+        }
+
         return win;
     }
 
@@ -604,27 +621,42 @@
         else if (uType & 0x00000010) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/103.png`;
         else if (uType & 0x00000030) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/101.png`;
         else if (uType & 0x00000040) c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/104.png`;
+        else c.querySelector('img').src = `${RESOURCE_BASE}/icons/novantotto/104.png`;
 
         const btn1 = c.querySelector('.control1');
         const btn2 = c.querySelector('.control2');
         const btn6 = c.querySelector('.control6');
         const btn7 = c.querySelector('.control7');
 
-        if (uType & 0x00000001) { // MB_OKCANCEL
+        const btnType = uType & 0xF;
+        if (btnType === 0x00000001) { // MB_OKCANCEL
             if (btn1) { btn1.style.display = 'inline-block'; attachButtonHandler(btn1, 1, hWnd); }
             if (btn2) { btn2.style.display = 'inline-block'; attachButtonHandler(btn2, 2, hWnd); }
             if (btn6) btn6.style.display = 'none';
             if (btn7) btn7.style.display = 'none';
-        } else if (uType & 0x00000004) { // MB_YESNO
+        } else if (btnType === 0x00000004) { // MB_YESNO
             if (btn1) btn1.style.display = 'none';
             if (btn2) btn2.style.display = 'none';
             if (btn6) { btn6.style.display = 'inline-block'; attachButtonHandler(btn6, 6, hWnd); }
             if (btn7) { btn7.style.display = 'inline-block'; attachButtonHandler(btn7, 7, hWnd); }
-        } else { // MB_OK
+        } else { // MB_OK default
             if (btn1) { btn1.innerText = 'OK'; btn1.style.display = 'inline-block'; attachButtonHandler(btn1, 1, hWnd); }
             if (btn2) btn2.style.display = 'none';
             if (btn6) btn6.style.display = 'none';
             if (btn7) btn7.style.display = 'none';
+        }
+
+        const closeBtn = c.querySelector('.close-btn, .control61536');
+        if (closeBtn) {
+            closeBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const dismissCmd = (btnType === 0x00000004) ? 7 : ((btnType === 0x00000001) ? 2 : 1);
+                if (typeof _PostMessage === 'function') {
+                    _PostMessage(hWnd, WM_COMMAND, dismissCmd, 0);
+                }
+                stopWaiting();
+            };
         }
 
         const rawText = typeof lpText === 'number' ? UTF8ToString(lpText) : lpText;
@@ -656,7 +688,7 @@
 
     function attachButtonHandler(button, controlId, winHwnd) {
         if (!button) return;
-        button.addEventListener('click', (e) => {
+        button.onclick = (e) => {
             e.preventDefault();
             e.stopPropagation();
             const targetHwnd = (winHwnd !== undefined && winHwnd !== null) ? winHwnd : _activeWindowHwnd;
@@ -664,7 +696,7 @@
                 _PostMessage(targetHwnd, WM_COMMAND, controlId, 0);
             }
             stopWaiting();
-        });
+        };
     }
 
     function transformDashboard(win, hWnd) {
@@ -1504,7 +1536,7 @@
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
-        const canvas = body.querySelector('canvas') || body.querySelector('.bmptipa');
+        const canvas = body.querySelector('canvas') || body.querySelector('.bmptipa') || body.querySelector('img.control251') || body.querySelector('img.dlg_item') || body.querySelector('img');
         const nomeEl = body.querySelector('.control105');
         const figoEl = body.querySelector('.control106');
         const affinitaEl = body.querySelector('.control107');
@@ -1524,22 +1556,24 @@
             const card = document.createElement('div');
             card.className = 'tipa-hero-card';
             card.appendChild(canvas);
+            attachButtonHandler(canvas, 130, hWnd);
             container.appendChild(card);
         }
 
         const statsBar = document.createElement('div');
         statsBar.className = 'mobile-stats-bar';
-        if (nomeEl) { resetElement(nomeEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.innerHTML = '<small>💋 Nome Tipa</small>'; c.appendChild(nomeEl); statsBar.appendChild(c); }
+        if (nomeEl) { resetElement(nomeEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.innerHTML = '<small>💋 Nome</small>'; c.appendChild(nomeEl); statsBar.appendChild(c); }
         if (affinitaEl) { resetElement(affinitaEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.innerHTML = '<small>❤️ Affinità</small>'; c.appendChild(affinitaEl); statsBar.appendChild(c); }
-        if (figoEl) { resetElement(figoEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.innerHTML = '<small>⭐ Figosità Tipa</small>'; c.appendChild(figoEl); statsBar.appendChild(c); }
+        if (figoEl) { resetElement(figoEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.innerHTML = '<small>⭐ Figosità</small>'; c.appendChild(figoEl); statsBar.appendChild(c); }
+        if (myFigoEl) { resetElement(myFigoEl); const c = document.createElement('div'); c.className = 'mini-stat'; c.innerHTML = '<small>👑 Fama</small>'; c.appendChild(myFigoEl); statsBar.appendChild(c); }
         container.appendChild(statsBar);
 
         const actionsList = document.createElement('div');
         actionsList.className = 'tipa-actions-list';
-        if (btnEsci) { resetElement(btnEsci); btnEsci.className = 'dlg_item control113 mobile-btn primary'; btnEsci.innerHTML = '🥂 Esci con la tipa'; attachButtonHandler(btnEsci, 113, hWnd); actionsList.appendChild(btnEsci); }
-        if (btnChiama) { resetElement(btnChiama); btnChiama.className = 'dlg_item control112 mobile-btn primary'; btnChiama.innerHTML = '📞 Telefona alla tipa'; attachButtonHandler(btnChiama, 112, hWnd); actionsList.appendChild(btnChiama); }
-        if (btnCerca) { resetElement(btnCerca); btnCerca.className = 'dlg_item control110 mobile-btn primary'; btnCerca.innerHTML = '🔍 Cerca nuova tipa'; attachButtonHandler(btnCerca, 110, hWnd); actionsList.appendChild(btnCerca); }
-        if (btnLascia) { resetElement(btnLascia); btnLascia.className = 'dlg_item control111 mobile-btn danger'; btnLascia.innerHTML = '💔 Lascia tipa'; attachButtonHandler(btnLascia, 111, hWnd); actionsList.appendChild(btnLascia); }
+        if (btnEsci) { resetElement(btnEsci); btnEsci.className = 'dlg_item control113 mobile-btn primary'; btnEsci.innerHTML = '🥂 Esci insieme'; attachButtonHandler(btnEsci, 113, hWnd); actionsList.appendChild(btnEsci); }
+        if (btnChiama) { resetElement(btnChiama); btnChiama.className = 'dlg_item control112 mobile-btn primary'; btnChiama.innerHTML = '📞 Telefona'; attachButtonHandler(btnChiama, 112, hWnd); actionsList.appendChild(btnChiama); }
+        if (btnCerca) { resetElement(btnCerca); btnCerca.className = 'dlg_item control110 mobile-btn primary'; btnCerca.innerHTML = '🔍 Cerca nuova tipa/o'; attachButtonHandler(btnCerca, 110, hWnd); actionsList.appendChild(btnCerca); }
+        if (btnLascia) { resetElement(btnLascia); btnLascia.className = 'dlg_item control111 mobile-btn danger'; btnLascia.innerHTML = '💔 Lascia tipa/o'; attachButtonHandler(btnLascia, 111, hWnd); actionsList.appendChild(btnLascia); }
         container.appendChild(actionsList);
 
         if (btnOk) {
@@ -2423,7 +2457,7 @@
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
-        const img = body.querySelector('img.control210') || body.querySelector('img.dlg_item') || body.querySelector('canvas') || body.querySelector('img');
+        const img = body.querySelector('img.control210') || body.querySelector('img.control211') || body.querySelector('img.dlg_item') || body.querySelector('canvas') || body.querySelector('img');
         const nomeEl = body.querySelector('.control105');
         const figoEl = body.querySelector('.control106');
         const giudizioEl = body.querySelector('.control107');
@@ -2476,10 +2510,15 @@
         if (!body) return;
 
         const statics = Array.from(body.querySelectorAll('.control[data-class="STATIC"], div.ss_center'));
-        const buttons = Array.from(body.querySelectorAll('button.dlg_item'));
+        const buttons = Array.from(body.querySelectorAll('button.dlg_item, button'));
 
         const container = document.createElement('div');
         container.className = 'mobile-screen-container mobile-due-donne-view';
+
+        const headerCard = document.createElement('div');
+        headerCard.className = 'due-donne-header-card';
+        headerCard.innerHTML = `<div class="due-donne-badge">⚡ DILEMMA AMOROSO</div>`;
+        container.appendChild(headerCard);
 
         if (statics.length > 0) {
             const descCard = document.createElement('div');
@@ -2498,6 +2537,17 @@
                 resetElement(btn);
                 const m = btn.className.match(/control(\d+)/) || btn.className.match(/\d+/);
                 const controlId = m ? Number(m[1] || m[0]) : null;
+                btn.className = 'dlg_item mobile-btn';
+                if (controlId === 101) {
+                    btn.className += ' control101 danger';
+                    btn.innerHTML = '🔥 Le voglio tutte e due !';
+                } else if (controlId === 102) {
+                    btn.className += ' control102 primary';
+                } else if (controlId === 2) {
+                    btn.className += ' control2 secondary';
+                } else {
+                    btn.className += ' primary';
+                }
                 if (controlId !== null) {
                     attachButtonHandler(btn, controlId, hWnd);
                 }
@@ -2514,7 +2564,7 @@
         const body = win.querySelector('.window-body') || win.querySelector('[class*="window-body"]');
         if (!body) return;
 
-        const img = body.querySelector('img.dlg_item') || body.querySelector('img');
+        const img = body.querySelector('img.control201') || body.querySelector('img.dlg_item') || body.querySelector('img');
         let descEl = body.querySelector('.control105') || body.querySelector('.control[data-class="STATIC"]');
         const btnOk = getButtonOk(body) || body.querySelector('button.control1') || body.querySelector('button');
 
@@ -2533,6 +2583,7 @@
             const card = document.createElement('div');
             card.className = 'picche-hero-card';
             card.appendChild(img);
+            attachButtonHandler(img, 201, hWnd);
             container.appendChild(card);
         }
 
@@ -3225,17 +3276,16 @@
         if (wall) wall.remove();
         if (win) win.remove();
 
-        if (_activeWindowHwnd === hWnd) {
-            const remainingWindows = Array.from(document.querySelectorAll('.window:not(.messagebox)'));
-            if (remainingWindows.length > 0) {
-                const topWin = remainingWindows[remainingWindows.length - 1];
-                const m = topWin.id.match(/\d+/);
-                if (m) {
-                    setActiveWindow(Number(m[0]));
-                }
-            } else {
-                _activeWindowHwnd = null;
+        const remainingWindows = Array.from(document.querySelectorAll('.window'));
+        if (remainingWindows.length > 0) {
+            const topWin = remainingWindows[remainingWindows.length - 1];
+            const m = topWin.id.match(/\d+/);
+            if (m) {
+                const newHwnd = Number(m[0]);
+                setActiveWindow(newHwnd);
             }
+        } else {
+            _activeWindowHwnd = null;
         }
         stopWaiting();
     }
