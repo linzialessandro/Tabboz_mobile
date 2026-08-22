@@ -153,10 +153,10 @@ html, body {
 }
 
 .title-bar-controls button {
-    min-width: 36px !important;
-    min-height: 36px !important;
-    width: 36px !important;
-    height: 36px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    width: 44px !important;
+    height: 44px !important;
     font-size: 16px !important;
     font-weight: bold !important;
     border-radius: 8px !important;
@@ -417,9 +417,10 @@ button:active, input[type="button"]:active {
 
 .save-manager-floating-btn {
     position: fixed;
-    top: calc(env(safe-area-inset-top, 8px) + 6px);
-    right: calc(env(safe-area-inset-right, 6px) + 8px);
-    z-index: 990;
+    top: calc(env(safe-area-inset-top, 0px) + 58px);
+    left: calc(env(safe-area-inset-left, 8px) + 8px);
+    right: auto;
+    z-index: 40;
     background: #c0c0c0;
     border: 2px outset #ffffff;
     padding: 4px 10px;

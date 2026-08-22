@@ -700,7 +700,6 @@
         6: transformCompagnia,
         9: transformTipa,
         10: transformScuola,
-        11: transformScuola,
         91: transformCercaTipa,
         92: transformDueDonne,
         95: transformDueDiPicche,

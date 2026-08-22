@@ -161,7 +161,6 @@ test('shop / scooter ranges resolve', () => {
 
 test('life / jobs / phone / events resolve', () => {
     assert.strictEqual(TM.resolveTransformer(10).name, 'transformScuola');
-    assert.strictEqual(TM.resolveTransformer(11).name, 'transformScuola');
     assert.strictEqual(TM.resolveTransformer(190).name, 'transformTipa');
     assert.strictEqual(TM.resolveTransformer(200).name, 'transformJobQuiz');
     assert.strictEqual(TM.resolveTransformer(210).name, 'transformCompanyList');
@@ -169,7 +168,6 @@ test('life / jobs / phone / events resolve', () => {
     assert.strictEqual(TM.resolveTransformer(120).name, 'transformCellulare');
     assert.strictEqual(TM.resolveTransformer(121).name, 'transformCompraCellulare');
     assert.strictEqual(TM.resolveTransformer(123).name, 'transformRicaricaCellulare');
-    assert.strictEqual(TM.resolveTransformer(96).name, 'transformEventBeatdown');
     assert.strictEqual(TM.resolveTransformer(104).name, 'transformEventBeatdown');
 });
 
@@ -178,6 +176,23 @@ test('unknown dialogs use the generic transformer', () => {
     assert.strictEqual(TM.resolveTransformer(15).name, 'transformGeneric');
     assert.strictEqual(TM.resolveTransformer(17).name, 'transformGeneric');
     assert.strictEqual(TM.resolveTransformer(9999).name, 'transformGeneric');
+});
+
+test('personal info is not transformed as scuola', () => {
+    assert.strictEqual(TM.resolveTransformer(10).name, 'transformScuola');
+    assert.notStrictEqual(TM.resolveTransformer(11).name, 'transformScuola');
+});
+
+test('metallaro events use beatdown; dialog 96 does not', () => {
+    assert.strictEqual(TM.resolveTransformer(100).name, 'transformEventBeatdown');
+    assert.strictEqual(TM.resolveTransformer(107).name, 'transformEventBeatdown');
+    assert.notStrictEqual(TM.resolveTransformer(96).name, 'transformEventBeatdown');
+});
+
+test('dismiss helpers exist on the UI kit', () => {
+    assert.strictEqual(typeof TM.ui.installCloseButton, 'function');
+    assert.strictEqual(typeof TM.ui.ensureDismissable, 'function');
+    assert.strictEqual(typeof TM.ui.hideBrokenCoordinates, 'function');
 });
 
 test('every known dialog ID has a function transformer', () => {

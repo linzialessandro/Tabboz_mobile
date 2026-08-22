@@ -576,12 +576,15 @@
             }
         }
 
+        const usedFallback = !html;
         if (!html) {
             html = `<div class="window" style="position: absolute; margin: 32px; width: 320px; height: 200px">
-                <div class="title-bar"><div class="title-bar-text">Finestra ${dialogNum}</div></div>
+                <div class="title-bar"><div class="title-bar-text">Finestra ${dialogNum}</div>
+                  <div class="title-bar-controls"><button class="control61536 close-btn" aria-label="Close">✕</button></div>
+                </div>
                 <div class="window-body">
                     <div style="padding: 16px; text-align: center;">Operazione completata.</div>
-                    <button class="dlg_item control1 button_ok mobile-btn primary" data-class="BorBtn" style="margin: 16px auto; width: 80%;">✓ Continua</button>
+                    <button class="dlg_item control2 button_cancel mobile-btn primary" data-class="BorBtn" style="margin: 16px auto; width: 80%;">✓ Continua</button>
                 </div>
             </div>`;
         }
@@ -593,19 +596,29 @@
         const win = createWindow(html, hWnd, CW_USEDEFAULT, CW_USEDEFAULT, CW_SKIPRESIZE, CW_SKIPRESIZE, null, 0, 0, parentWindowId);
         win.classList.add('dlg-' + dialogNum);
         dismissLoadingScreen();
+        ui.hideBrokenCoordinates(win);
+        ui.installCloseButton(win, hWnd);
         setActiveWindow(hWnd);
         addMainMenu(win);
 
         try {
-            if (typeof TM.transformDialog === 'function') {
+            if (!usedFallback && typeof TM.transformDialog === 'function') {
                 TM.transformDialog(win, hWnd, dialogNum);
+            } else if (usedFallback && typeof TM.resolveTransformer === 'function') {
+                TM.resolveTransformer(-1)(win, hWnd);
             }
         } catch (err) {
             console.error('[Tabboz] Error transforming dialog ' + dialogNum + ':', err);
-            if (typeof TM.resolveTransformer === 'function') {
-                TM.resolveTransformer(-1)(win, hWnd);
+            try {
+                if (typeof TM.resolveTransformer === 'function') {
+                    TM.resolveTransformer(-1)(win, hWnd);
+                }
+            } catch (err2) {
+                console.error('[Tabboz] Generic transform also failed:', err2);
             }
         }
+
+        ui.ensureDismissable(win, hWnd);
 
         win.querySelectorAll('.dlg_item').forEach((element) => {
             const hMenu = ui.extractControlId(element.className);

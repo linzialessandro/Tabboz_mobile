@@ -83,10 +83,6 @@
         body.appendChild(container);
     }
 
-    TM.registerTransformers({
-        96: transformEventBeatdown,
-    });
-
     TM.registerRanges([
         { min: 100, max: 107, fn: transformEventBeatdown },
     ]);

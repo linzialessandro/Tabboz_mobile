@@ -164,6 +164,76 @@
         return card;
     }
 
+    function hideBrokenCoordinates(root) {
+        if (!root || !root.querySelectorAll) return;
+        root.querySelectorAll('[style]').forEach((el) => {
+            const top = parseInt(el.style.top, 10);
+            const left = parseInt(el.style.left, 10);
+            if ((Number.isFinite(top) && Math.abs(top) > 4000) || (Number.isFinite(left) && Math.abs(left) > 4000)) {
+                el.style.display = 'none';
+            }
+        });
+    }
+
+    function installCloseButton(win, hWnd) {
+        if (!win) return null;
+        let bar = win.querySelector('.title-bar');
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.className = 'title-bar';
+            const text = document.createElement('div');
+            text.className = 'title-bar-text';
+            text.textContent = 'Tabboz Simulator';
+            bar.appendChild(text);
+            win.insertBefore(bar, win.firstChild);
+        }
+        let controls = bar.querySelector('.title-bar-controls');
+        if (!controls) {
+            controls = document.createElement('div');
+            controls.className = 'title-bar-controls';
+            bar.appendChild(controls);
+        }
+        let close = controls.querySelector('.control61536, .close-btn');
+        if (!close) {
+            close = document.createElement('button');
+            close.type = 'button';
+            close.className = 'control61536 close-btn';
+            close.setAttribute('aria-label', 'Close');
+            close.textContent = '✕';
+            controls.appendChild(close);
+        }
+        markBound(close);
+        close.onclick = (event) => {
+            swallow(event);
+            postCommand(hWnd, 2);
+        };
+        return close;
+    }
+
+    function isWindowDismissable(win) {
+        const body = getBody(win);
+        if (!body) return false;
+        return !!(body.querySelector('[data-tm-bound]')
+            || body.querySelector('button.control1, button.control2, button.button_ok, button.button_cancel'));
+    }
+
+    function ensureDismissable(win, hWnd) {
+        installCloseButton(win, hWnd);
+        if (isWindowDismissable(win)) return;
+        const body = getBody(win);
+        if (!body) return;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'dlg_item control2 button_cancel mobile-btn primary';
+        btn.setAttribute('data-class', 'BorBtn');
+        btn.textContent = '✓ Continua';
+        attachButtonHandler(btn, 2, hWnd);
+        const bar = document.createElement('div');
+        bar.className = 'mobile-bottom-bar';
+        bar.appendChild(btn);
+        body.appendChild(bar);
+    }
+
     function isCommandSource(el) {
         if (!el || !el.tagName) return false;
         const tag = el.tagName;
@@ -273,6 +343,10 @@
         attachButtonHandler,
         bindSelect,
         isCommandSource,
+        hideBrokenCoordinates,
+        installCloseButton,
+        isWindowDismissable,
+        ensureDismissable,
         setButton,
         el,
         miniStat,
