@@ -274,7 +274,8 @@
     }
 
     function gameWindows() {
-        return Array.from(document.querySelectorAll('#screen .window[id^="win"]'));
+        return Array.from(document.querySelectorAll('.window[id^="win"]'))
+            .filter((w) => !w.classList.contains('save-modal-window'));
     }
 
     function setActiveWindow(hWnd) {
@@ -465,15 +466,20 @@
         centerWindow(win);
     }
 
-    function createWindow(html, hWnd, x, y, width, height, lpCaption, dwStyle, dwExStyle, parentWindowId) {
+    function createWindow(html, hWnd, x, y, width, height, lpCaption, dwStyle, dwExStyle, parentWindowId, options) {
+        const overlay = !!(options && options.overlay);
         const wall = createElementFromHTML(WALL_TMPL);
         const win = createElementFromHTML(html || WINDOW_TMPL);
         win.style.display = 'none';
         win.style.margin = '0px';
         wall.id = 'wall' + hWnd;
         win.id = 'win' + hWnd;
+        if (overlay) {
+            wall.classList.add('tm-modal-backdrop');
+            win.classList.add('messagebox');
+        }
 
-        const destination = document.getElementById('screen');
+        const destination = overlay ? document.body : document.getElementById('screen');
         destination.appendChild(wall);
         destination.appendChild(win);
 
@@ -487,6 +493,7 @@
 
         const closeBtn = win.querySelector('.control61536, .close-btn');
         if (closeBtn) {
+            if (!String(closeBtn.textContent || '').trim()) closeBtn.textContent = '✕';
             ui.markBound(closeBtn);
             closeBtn.onclick = (e) => {
                 e.preventDefault();
@@ -500,7 +507,7 @@
     }
 
     async function messageBox(hWnd, lpText, lpCaption, uType, parentWindowId) {
-        const c = createWindow(MESSAGE_BOX_TMPL, hWnd, 0, 0, CW_SKIPRESIZE, CW_SKIPRESIZE, lpCaption, 0, 0, parentWindowId);
+        const c = createWindow(MESSAGE_BOX_TMPL, hWnd, 0, 0, CW_SKIPRESIZE, CW_SKIPRESIZE, lpCaption, 0, 0, parentWindowId, { overlay: true });
         c.classList.add('messagebox');
 
         const icon = c.querySelector('img');
@@ -535,6 +542,8 @@
 
         const closeBtn = c.querySelector('.close-btn, .control61536');
         if (closeBtn) {
+            if (!String(closeBtn.textContent || '').trim()) closeBtn.textContent = '✕';
+            ui.markBound(closeBtn);
             closeBtn.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -544,11 +553,27 @@
             };
         }
 
+        const wall = document.getElementById('wall' + hWnd);
+        if (wall) {
+            wall.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        }
+
         const rawText = typeof lpText === 'number' ? UTF8ToString(lpText) : lpText;
         c.querySelector('.content').innerText = sanitizeItalianText(rawText);
         setActiveWindow(hWnd);
         showWindow(hWnd, 1);
         centerWindow(c);
+
+        // Ignore the tap that opened this alert so it cannot hit OK before C is waiting.
+        c.style.pointerEvents = 'none';
+        if (wall) wall.style.pointerEvents = 'none';
+        window.setTimeout(function () {
+            c.style.pointerEvents = '';
+            if (wall) wall.style.pointerEvents = '';
+        }, 400);
     }
 
     function dismissLoadingScreen() {

@@ -6,7 +6,7 @@
 (function (root) {
     'use strict';
     root.TabbozMobile = root.TabbozMobile || {};
-    root.TabbozMobile.ASSET_VERSION = '34';
+    root.TabbozMobile.ASSET_VERSION = '35';
 
     var inBrowser = typeof document !== 'undefined' && document.currentScript;
     if (!inBrowser) return;
