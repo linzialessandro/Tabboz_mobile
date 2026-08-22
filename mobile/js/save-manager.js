@@ -392,7 +392,8 @@
             importInput.addEventListener('change', () => handleImportInput(importInput));
         }
 
-        document.body.appendChild(modal);
+        const host = (TM.ui && typeof TM.ui.overlayRoot === 'function') ? TM.ui.overlayRoot() : document.body;
+        host.appendChild(modal);
         const closeBtn = modal.querySelector('[data-action="close"]');
         if (closeBtn) closeBtn.focus();
     }

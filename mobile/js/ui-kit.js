@@ -164,6 +164,17 @@
         return card;
     }
 
+    function overlayRoot() {
+        if (typeof document === 'undefined') return null;
+        let root = document.getElementById('tm-overlays');
+        if (!root) {
+            root = document.createElement('div');
+            root.id = 'tm-overlays';
+            document.body.appendChild(root);
+        }
+        return root;
+    }
+
     function hideBrokenCoordinates(root) {
         if (!root || !root.querySelectorAll) return;
         root.querySelectorAll('[style]').forEach((el) => {
@@ -199,9 +210,9 @@
             close.type = 'button';
             close.className = 'control61536 close-btn';
             close.setAttribute('aria-label', 'Close');
-            close.textContent = '✕';
             controls.appendChild(close);
         }
+        if (!String(close.textContent || '').trim()) close.textContent = '✕';
         markBound(close);
         close.onclick = (event) => {
             swallow(event);
@@ -343,6 +354,7 @@
         attachButtonHandler,
         bindSelect,
         isCommandSource,
+        overlayRoot,
         hideBrokenCoordinates,
         installCloseButton,
         isWindowDismissable,

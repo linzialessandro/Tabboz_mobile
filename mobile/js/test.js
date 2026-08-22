@@ -193,6 +193,7 @@ test('dismiss helpers exist on the UI kit', () => {
     assert.strictEqual(typeof TM.ui.installCloseButton, 'function');
     assert.strictEqual(typeof TM.ui.ensureDismissable, 'function');
     assert.strictEqual(typeof TM.ui.hideBrokenCoordinates, 'function');
+    assert.strictEqual(typeof TM.ui.overlayRoot, 'function');
 });
 
 test('every known dialog ID has a function transformer', () => {

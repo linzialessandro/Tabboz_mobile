@@ -37,6 +37,20 @@ html, body {
     box-sizing: border-box;
 }
 
+/* Card overlays (alerts, save modal) must not use position:fixed inside
+   overflow:hidden — iOS then draws them in one place and hit-tests another. */
+#tm-overlays {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3000;
+    overflow: visible;
+}
+
+#tm-overlays > * {
+    pointer-events: auto;
+}
+
 /* In-game walls stay non-blocking; MessageBox backdrops are real overlays. */
 .wall {
     display: none !important;
@@ -46,10 +60,10 @@ html, body {
 .wall.tm-modal-backdrop {
     display: block !important;
     pointer-events: auto !important;
-    position: fixed !important;
+    position: absolute !important;
     inset: 0 !important;
     background: rgba(0, 0, 0, 0.5) !important;
-    z-index: 3000 !important;
+    z-index: 1 !important;
 }
 
 /* Full-Screen Mobile Window Experience */
@@ -82,11 +96,11 @@ html, body {
 
 /* MessageBox Fixed Centered Modal Card */
 .window.messagebox {
-    position: fixed !important;
+    position: absolute !important;
     left: 50% !important;
     top: 50% !important;
     transform: translate(-50%, -50%) !important;
-    z-index: 3001 !important;
+    z-index: 2 !important;
     width: min(92vw, 360px) !important;
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75) !important;
     border-radius: 12px !important;
@@ -427,11 +441,11 @@ button:active, input[type="button"]:active {
    ========================================================================== */
 
 .save-manager-floating-btn {
-    position: fixed;
+    position: absolute;
     top: calc(env(safe-area-inset-top, 0px) + 58px);
     left: calc(env(safe-area-inset-left, 8px) + 8px);
     right: auto;
-    z-index: 40;
+    z-index: 1;
     background: #c0c0c0;
     border: 2px outset #ffffff;
     padding: 4px 10px;
@@ -452,13 +466,13 @@ button:active, input[type="button"]:active {
 }
 
 .save-modal-backdrop {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.65);
-    z-index: 1000;
+    z-index: 5;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -683,7 +697,7 @@ button:active, input[type="button"]:active {
 
 /* Shutdown Screen */
 .shutdown {
-    position: fixed;
+    position: absolute;
     inset: 0;
     background-color: #000;
     color: #ff8000;

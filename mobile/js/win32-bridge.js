@@ -447,7 +447,7 @@
     function centerWindow(win) {
         if (!win) return;
         if (win.classList.contains('messagebox')) {
-            win.style.position = 'fixed';
+            win.style.position = 'absolute';
             win.style.left = '50%';
             win.style.top = '50%';
             win.style.transform = 'translate(-50%, -50%)';
@@ -479,7 +479,7 @@
             win.classList.add('messagebox');
         }
 
-        const destination = overlay ? document.body : document.getElementById('screen');
+        const destination = overlay ? (ui.overlayRoot() || document.body) : document.getElementById('screen');
         destination.appendChild(wall);
         destination.appendChild(win);
 
@@ -795,7 +795,7 @@
     function shutdown() {
         const element = createElementFromHTML(SHUTDOWN_TMPL);
         element.style.display = 'flex';
-        document.getElementById('screen').appendChild(element);
+        ui.overlayRoot().appendChild(element);
     }
 
     function startGame() {
