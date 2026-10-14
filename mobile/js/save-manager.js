@@ -144,31 +144,107 @@
         keysToRemove.forEach((key) => localStorage.removeItem(key));
     }
 
+    /**
+     * Registry Soldi is in thousands of lire (10 → "10000 L."), matching MostraSoldi.
+     * A missing value must not become "0000 L." / "Tabbozzo".
+     */
+    function formatLire(raw) {
+        if (raw === null || raw === undefined || raw === '') return null;
+        const n = Number(raw);
+        if (!Number.isFinite(n)) return String(raw) + ' L.';
+        if (n === 0) return '0 L.';
+        return String(n) + '000 L.';
+    }
+
     function getCurrentGameState() {
         const state = collectRegistry();
-        const nome = getRegistryValue('Nome') || 'Tabbozzo';
+        const nome = getRegistryValue('Nome');
         const cognome = getRegistryValue('Cognome') || '';
-        const soldi = getRegistryValue('Soldi') || '0';
-        const figosita = getRegistryValue('Fama') || '0';
-        const reputazione = getRegistryValue('Reputazione') || '0';
-        const giorno = getRegistryValue('Giorno') || '1';
-        const mese = getRegistryValue('Mese') || '10';
-        const sizze = getRegistryValue('Sigarette') || '0';
-        const tipa = getRegistryValue('Nometipa') || 'Nessuna';
+        const registered = !!nome;
+        const soldi = formatLire(getRegistryValue('Soldi'));
+        const figosita = getRegistryValue('Fama');
+        const reputazione = getRegistryValue('Reputazione');
+        const giorno = getRegistryValue('Giorno');
+        const mese = getRegistryValue('Mese');
+        const sizze = getRegistryValue('Sigarette');
+        const tipa = getRegistryValue('Nometipa');
 
         return {
             meta: {
-                name: `${nome} ${cognome}`.trim(),
-                soldi: `${soldi}000 L.`,
-                figosita: `${figosita}/100`,
-                reputazione: `${reputazione}/100`,
-                date: `${giorno}/${mese}`,
-                sizze: sizze,
+                name: registered ? `${nome} ${cognome}`.trim() : 'Partita non registrata',
+                soldi: soldi || '—',
+                figosita: registered ? `${figosita || '0'}/100` : '—',
+                reputazione: registered ? `${reputazione || '0'}/100` : '—',
+                date: (giorno && mese) ? `${giorno}/${mese}` : '—',
+                sizze: sizze || '0',
                 tipa: tipa || 'Nessuna',
                 timestamp: new Date().toISOString()
             },
             registry: state
         };
+    }
+
+    function registryHasGame() {
+        return Object.keys(collectRegistry()).length > 0 && !!getRegistryValue('Nome');
+    }
+
+    /**
+     * The WASM engine writes localStorage only inside SalvaTutto (events, exit,
+     * configuration OK). Until then the live game is Tizio Caio / 10000 L. while
+     * the save panel used to invent Tabbozzo / 0000 L. and store an empty slot.
+     * Dialog 14 OK calls SalvaTutto and does not read the skill radios back.
+     */
+    let _flushing = null;
+
+    function canFlushEngine() {
+        if (typeof document === 'undefined' || !TM.ui || typeof TM.ui.postCommand !== 'function') return false;
+        const wins = Array.from(document.querySelectorAll('.window[id^="win"]')).filter((w) => {
+            return !w.classList.contains('messagebox')
+                && !w.classList.contains('tm-silent')
+                && w.style.display !== 'none';
+        });
+        return wins.length === 1 && wins[0].classList.contains('dlg-1');
+    }
+
+    function flushEngineSave() {
+        if (typeof document === 'undefined') return Promise.resolve(false);
+        if (_flushing) return _flushing;
+        if (!canFlushEngine()) return Promise.resolve(registryHasGame());
+
+        _flushing = new Promise((resolve) => {
+            const dash = document.querySelector('.window.dlg-1');
+            const hwnd = TM.ui.parseWindowHwnd(dash);
+            if (hwnd === null) {
+                _flushing = null;
+                resolve(false);
+                return;
+            }
+            TM._silentDialog = 14;
+            let opened = false;
+            const started = Date.now();
+            TM.ui.postCommand(hwnd, 140);
+
+            const timer = window.setInterval(() => {
+                const dlg = document.querySelector('.window.dlg-14');
+                if (dlg) opened = true;
+                if (opened && !document.querySelector('.window.dlg-14')) {
+                    finish(registryHasGame());
+                    return;
+                }
+                if (Date.now() - started > 1600) {
+                    if (dlg) dlg.classList.remove('tm-silent');
+                    finish(registryHasGame());
+                }
+            }, 40);
+
+            function finish(ok) {
+                window.clearInterval(timer);
+                TM._silentDialog = 0;
+                _flushing = null;
+                resolve(ok);
+            }
+        });
+        return _flushing;
     }
 
     function restoreGameState(saveData) {
@@ -206,6 +282,10 @@
     function saveToSlot(slotIndex) {
         const index = assertSlot(slotIndex);
         const state = getCurrentGameState();
+        if (!registryHasGame()) {
+            window.alert('La partita non è ancora registrata. Torna alla schermata principale e riprova.');
+            return null;
+        }
         if (!safeSetItem(slotKey(index), JSON.stringify(state))) return null;
         const meta = getSlotsMetadata();
         meta[index] = state.meta;
@@ -235,6 +315,10 @@
     }
 
     function exportSaveFile() {
+        if (!registryHasGame()) {
+            window.alert('La partita non è ancora registrata. Torna alla schermata principale e riprova.');
+            return;
+        }
         const state = getCurrentGameState();
         const jsonStr = JSON.stringify(state, null, 2);
         const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -406,9 +490,12 @@
     }
 
     function openModal() {
-        _previousFocus = document.activeElement;
-        renderModal();
-        window.addEventListener('keydown', handleKeyDown);
+        Promise.resolve(flushEngineSave()).then(() => {
+            if (document.getElementById('save-manager-modal')) return;
+            _previousFocus = document.activeElement;
+            renderModal();
+            window.addEventListener('keydown', handleKeyDown);
+        });
     }
 
     function closeModal() {
@@ -422,10 +509,12 @@
     }
 
     function handleSaveSlot(i) {
-        const meta = getSlotsMetadata();
-        if (meta[i] && !window.confirm(`Vuoi sovrascrivere il salvataggio nello Slot ${i}?`)) return;
-        saveToSlot(i);
-        renderModal();
+        Promise.resolve(flushEngineSave()).then(() => {
+            const meta = getSlotsMetadata();
+            if (meta[i] && !window.confirm(`Vuoi sovrascrivere il salvataggio nello Slot ${i}?`)) return;
+            if (!saveToSlot(i)) return;
+            renderModal();
+        });
     }
 
     function handleLoadSlot(i) {
@@ -475,6 +564,8 @@
         importSaveFile,
         openModal,
         closeModal,
+        flushEngineSave,
+        formatLire,
         handleSaveSlot,
         handleDeleteSlot,
         handleResetGame,
@@ -486,12 +577,26 @@
 
     if (typeof window !== 'undefined') window.SaveManager = api;
 
+    if (typeof document !== 'undefined') {
+        let flushTries = 0;
+        const initialFlush = window.setInterval(() => {
+            flushTries += 1;
+            if (canFlushEngine()) {
+                window.clearInterval(initialFlush);
+                flushEngineSave();
+            } else if (flushTries > 40) {
+                window.clearInterval(initialFlush);
+            }
+        }, 250);
+    }
+
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             validateSaveData,
             parseSaveJson,
             isAllowedRegistryKey,
             jsonReviver,
+            formatLire,
             SAVE
         };
     }

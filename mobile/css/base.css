@@ -442,22 +442,31 @@ button:active, input[type="button"]:active {
 
 .save-manager-floating-btn {
     position: absolute;
-    top: calc(env(safe-area-inset-top, 0px) + 58px);
-    left: calc(env(safe-area-inset-left, 8px) + 8px);
-    right: auto;
+    top: calc(env(safe-area-inset-top, 0px) + 4px);
+    right: calc(env(safe-area-inset-right, 0px) + 64px);
+    left: auto;
     z-index: 1;
-    background: #c0c0c0;
-    border: 2px outset #ffffff;
-    padding: 4px 10px;
-    font-size: 13px;
+    width: 44px;
+    height: 44px;
+    background: rgba(0, 77, 77, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    padding: 0;
+    font-size: 20px;
     font-weight: bold;
-    color: #000;
+    color: #fff;
     cursor: pointer;
-    border-radius: 3px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    border-radius: 10px;
+    box-shadow: none;
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
+}
+
+/* Engine flush opens Configuration off-screen; never cover the dashboard. */
+.window.tm-silent,
+.wall.tm-silent {
+    display: none !important;
+    pointer-events: none !important;
 }
 
 .save-manager-floating-btn:active {

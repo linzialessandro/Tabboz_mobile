@@ -38,6 +38,7 @@ const {
     validateSaveData,
     parseSaveJson,
     isAllowedRegistryKey,
+    formatLire,
     SAVE
 } = require('./save-manager.js');
 
@@ -104,6 +105,14 @@ test('rejects oversized payloads and non-string values', () => {
     const nested = validSave();
     nested.registry[PREFIX + '\\Nome'] = { nested: true };
     assert.ok(validateSaveData(nested));
+});
+
+test('formatLire matches the engine thousands-of-lire display', () => {
+    assert.strictEqual(formatLire('10'), '10000 L.');
+    assert.strictEqual(formatLire(0), '0 L.');
+    assert.strictEqual(formatLire('0'), '0 L.');
+    assert.strictEqual(formatLire(null), null);
+    assert.strictEqual(formatLire(''), null);
 });
 
 test('sanitizeItalianText decodes CP1252 escapes', () => {

@@ -397,6 +397,44 @@
     border: 1px solid #fde68a;
 }
 
+/* Landscape phones: the 300px portrait would push Scooter/Negozi/… below the fold. */
+@media (max-height: 520px) {
+    .window.dlg-1 .mobile-dashboard-container {
+        max-width: none;
+        gap: 6px;
+        padding-bottom: 8px;
+    }
+
+    .dashboard-header-card {
+        flex-direction: row;
+        justify-content: center;
+        gap: 12px;
+        padding: 4px 12px;
+    }
+
+    .dashboard-hero-row {
+        max-height: 108px;
+    }
+
+    .window.dlg-1 canvas.control101 {
+        width: 64px !important;
+        min-width: 64px !important;
+        height: 96px !important;
+    }
+
+    .dashboard-nav-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+    }
+
+    .dashboard-nav-grid button {
+        height: 44px !important;
+        min-height: 44px !important;
+        font-size: 13px !important;
+        padding: 4px 6px !important;
+    }
+}
+
 
 
 

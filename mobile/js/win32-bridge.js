@@ -283,6 +283,8 @@
         _highestZIndex += 10;
         const activeWin = document.getElementById('win' + hWnd);
         if (!activeWin) return;
+        /* A silent flush dialog must not hide the screen the player is looking at. */
+        if (activeWin.classList.contains('tm-silent')) return;
 
         const isMsgBox = activeWin.classList.contains('messagebox');
         const regular = gameWindows().filter((w) => !w.classList.contains('messagebox'));
@@ -620,6 +622,12 @@
 
         const win = createWindow(html, hWnd, CW_USEDEFAULT, CW_USEDEFAULT, CW_SKIPRESIZE, CW_SKIPRESIZE, null, 0, 0, parentWindowId);
         win.classList.add('dlg-' + dialogNum);
+        const silentFlush = TM._silentDialog && Number(TM._silentDialog) === dialogNum;
+        if (silentFlush) {
+            win.classList.add('tm-silent');
+            const wall = document.getElementById('wall' + hWnd);
+            if (wall) wall.classList.add('tm-silent');
+        }
         dismissLoadingScreen();
         ui.hideBrokenCoordinates(win);
         ui.installCloseButton(win, hWnd);
@@ -661,6 +669,13 @@
 
         showWindow(hWnd, 1);
         centerWindow(win);
+
+        if (silentFlush) {
+            /* Configuration IDOK calls SalvaTutto without changing skill/sound. */
+            window.setTimeout(function () {
+                ui.postCommand(hWnd, 1);
+            }, 60);
+        }
     }
 
     function destroyWindow(hWnd) {
