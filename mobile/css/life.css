@@ -71,12 +71,33 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
+/* Keep Studia / Minaccia / Corrompi on screen; the subject list scrolls. */
+.window-body:has(.mobile-scuola-view) {
+    overflow: hidden;
+    align-items: stretch;
+}
+
+.mobile-scuola-view {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+    padding-bottom: 8px;
+}
+
+.mobile-scuola-view .scuola-subject-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
 .mobile-actions-drawer {
     display: flex;
     flex-direction: column;
     gap: 8px;
     width: 100%;
     margin-top: 4px;
+    flex-shrink: 0;
 }
 
 .mobile-actions-drawer button {
