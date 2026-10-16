@@ -97,6 +97,15 @@ test('rejects slot metadata keys and prototype pollution', () => {
     );
 });
 
+test('invalid JSON keeps the parser error as cause', () => {
+    assert.throws(() => parseSaveJson('{'), (err) => {
+        assert.ok(err instanceof Error);
+        assert.match(err.message, /non valido/);
+        assert.ok(err.cause instanceof SyntaxError);
+        return true;
+    });
+});
+
 test('rejects oversized payloads and non-string values', () => {
     assert.throws(() => parseSaveJson('x'.repeat(SAVE.MAX_BYTES + 1)), /troppo grande/);
     const tooBig = validSave();

@@ -91,7 +91,7 @@
         try {
             data = JSON.parse(text, jsonReviver);
         } catch (e) {
-            throw new Error('File di salvataggio non valido o corrotto.');
+            throw new Error('File di salvataggio non valido o corrotto.', { cause: e });
         }
         const error = validateSaveData(data);
         if (error) throw new Error(error);
@@ -578,15 +578,30 @@
     if (typeof window !== 'undefined') window.SaveManager = api;
 
     if (typeof document !== 'undefined') {
-        let flushTries = 0;
+        // This script loads before zarrosim.wasm is compiled, and the player
+        // may sit on the splash. A short try-count burned that whole budget
+        // and then skipped SalvaTutto, so a slow phone or CI runner opened
+        // the save panel with an empty registry. Wait out loading and the
+        // splash, then give the dashboard 20s. Stop after two minutes so a
+        // game that never boots does not leave the timer running.
+        const armedAt = Date.now();
+        let dashboardWaitStart = 0;
         const initialFlush = window.setInterval(() => {
-            flushTries += 1;
             if (canFlushEngine()) {
                 window.clearInterval(initialFlush);
                 flushEngineSave();
-            } else if (flushTries > 40) {
-                window.clearInterval(initialFlush);
+                return;
             }
+            const loading = document.getElementById('loading-screen');
+            const onSplash = !!document.querySelector('.window.dlg-12');
+            if (loading || onSplash) {
+                dashboardWaitStart = 0;
+                return;
+            }
+            if (!dashboardWaitStart) dashboardWaitStart = Date.now();
+            const waitingTooLong = Date.now() - dashboardWaitStart > 20000;
+            const absoluteCap = Date.now() - armedAt > 120000;
+            if (waitingTooLong || absoluteCap) window.clearInterval(initialFlush);
         }, 250);
     }
 
