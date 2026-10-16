@@ -6,3 +6,7 @@
 *.bak
 *.BAK
 /novantotto
+node_modules/
+mobile/e2e/artifacts/
+__pycache__/
+*.pyc

@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-and-unit:
+    name: Syntax, lint, and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dev dependencies
+        run: npm ci
+
+      - name: Syntax, lint, and unit tests
+        run: npm run check
+
+  e2e:
+    name: Playwright phone tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dev dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Phone portrait and landscape
+        env:
+          TABBOZ_URL: http://127.0.0.1:8080/mobile/
+          TABBOZ_BROWSER: playwright
+        run: |
+          set -euo pipefail
+          mkdir -p mobile/e2e/artifacts
+          python3 server.py > mobile/e2e/artifacts/server.log 2>&1 &
+          python3 - <<'PY'
+          import pathlib, sys, time, urllib.request
+          url = "http://127.0.0.1:8080/mobile/"
+          log = pathlib.Path("mobile/e2e/artifacts/server.log")
+          for _ in range(50):
+              try:
+                  with urllib.request.urlopen(url, timeout=1) as response:
+                      if response.status == 200:
+                          sys.exit(0)
+              except Exception:
+                  time.sleep(0.2)
+          print("server did not start", file=sys.stderr)
+          if log.exists():
+              print(log.read_text(encoding="utf-8", errors="replace"), file=sys.stderr)
+          sys.exit(1)
+          PY
+          npm run test:e2e
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failure
+          path: mobile/e2e/artifacts/
+          if-no-files-found: ignore
+          retention-days: 14

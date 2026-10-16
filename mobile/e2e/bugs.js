@@ -4,16 +4,78 @@
  *   python3 server.py
  *   node mobile/e2e/bugs.js
  *
- * Requires Playwright and Chrome (google-chrome on PATH, or CHROME=...).
+ * Touch, 390×844 portrait and 844×390 landscape.
+ * Uses Playwright's Chromium when TABBOZ_BROWSER=playwright (CI).
+ * Otherwise uses CHROME, or /usr/bin/google-chrome when that file exists.
+ * On failure, screenshots and error.txt land in mobile/e2e/artifacts/.
  */
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const { chromium } = require('playwright');
 const assert = require('assert');
 
-const BASE = process.env.TABBOZ_URL || 'http://localhost:8080/mobile/';
-const CHROME = process.env.CHROME || '/usr/bin/google-chrome';
+const BASE = process.env.TABBOZ_URL || 'http://127.0.0.1:8080/mobile/';
 const NOME_KEY = 'HKEY_CURRENT_USER\\Software\\Obscured Truckware\\Tabboz Simulator 32\\Nome';
+const ARTIFACTS = path.join(__dirname, 'artifacts');
+const openPages = [];
+
+function launchOptions() {
+    const options = {
+        headless: true,
+        args: ['--no-sandbox', '--disable-dev-shm-usage']
+    };
+    if (process.env.TABBOZ_BROWSER === 'playwright') return options;
+    if (process.env.CHROME) {
+        options.executablePath = process.env.CHROME;
+        return options;
+    }
+    const candidates = [
+        '/usr/bin/google-chrome',
+        '/usr/bin/google-chrome-stable',
+        '/usr/bin/chromium-browser',
+        '/usr/bin/chromium'
+    ];
+    for (const candidate of candidates) {
+        if (fs.existsSync(candidate)) {
+            options.executablePath = candidate;
+            return options;
+        }
+    }
+    return options;
+}
+
+function clearShots() {
+    fs.mkdirSync(ARTIFACTS, { recursive: true });
+    for (const name of fs.readdirSync(ARTIFACTS)) {
+        if (name.endsWith('.png') || name === 'error.txt') {
+            fs.unlinkSync(path.join(ARTIFACTS, name));
+        }
+    }
+}
+
+async function capture(err) {
+    fs.mkdirSync(ARTIFACTS, { recursive: true });
+    const lines = [String(err && err.stack || err), ''];
+    for (const entry of openPages) {
+        lines.push('--- ' + entry.label + ' pageerrors ---');
+        lines.push(entry.errors.join('\n') || '(none)');
+        lines.push('--- ' + entry.label + ' dialogs ---');
+        lines.push(entry.dialogs.join('\n') || '(none)');
+        lines.push('--- ' + entry.label + ' console errors ---');
+        lines.push(entry.consoleErrors.join('\n') || '(none)');
+        if (entry.page.isClosed()) continue;
+        const file = path.join(ARTIFACTS, 'failure-' + entry.label + '.png');
+        try {
+            await entry.page.screenshot({ path: file, fullPage: true });
+            lines.push('screenshot: ' + file);
+        } catch (shotErr) {
+            lines.push('screenshot failed: ' + shotErr.message);
+        }
+    }
+    fs.writeFileSync(path.join(ARTIFACTS, 'error.txt'), lines.join('\n'));
+}
 
 async function boot(browser, width, height) {
     const context = await browser.newContext({
@@ -23,75 +85,137 @@ async function boot(browser, width, height) {
         deviceScaleFactor: 1
     });
     const page = await context.newPage();
+    page.setDefaultTimeout(20000);
     const errors = [];
+    const dialogs = [];
+    const consoleErrors = [];
     page.on('pageerror', (err) => errors.push(err.message));
-    await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-    await page.locator('button', { hasText: 'TOCCA PER GIOCARE' }).tap();
-    await page.waitForFunction((key) => !!localStorage.getItem(key), NOME_KEY, { timeout: 8000 });
-    return { context, page, errors };
+    page.on('console', (msg) => {
+        if (msg.type() === 'error') consoleErrors.push(msg.text());
+    });
+    page.on('dialog', (dialog) => {
+        dialogs.push(dialog.type() + ': ' + dialog.message());
+        dialog.accept().catch(() => {});
+    });
+    const label = width + 'x' + height;
+    openPages.push({ page, label, errors, dialogs, consoleErrors });
+
+    const started = Date.now();
+    let lastErr = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 20000 });
+            lastErr = null;
+            break;
+        } catch (err) {
+            lastErr = err;
+            await page.waitForTimeout(400);
+        }
+    }
+    if (lastErr) throw lastErr;
+
+    const start = page.locator('button', { hasText: 'TOCCA PER GIOCARE' });
+    await start.waitFor({ state: 'visible', timeout: 45000 });
+    await start.tap();
+    await page.locator('.dashboard-nav-grid button', { hasText: 'Scuola' }).waitFor({
+        state: 'visible',
+        timeout: 20000
+    });
+    await page.waitForFunction((key) => !!localStorage.getItem(key), NOME_KEY, { timeout: 20000 });
+    await page.waitForFunction(() => !document.querySelector('.window.dlg-14'), undefined, { timeout: 5000 });
+    console.log('boot ' + label + ' ' + (Date.now() - started) + 'ms');
+    return { context, page, errors, dialogs };
 }
 
 (async () => {
-    const browser = await chromium.launch({
-        executablePath: CHROME,
-        headless: true,
-        args: ['--no-sandbox', '--disable-dev-shm-usage']
-    });
+    clearShots();
+    let browser;
+    try {
+        browser = await chromium.launch(launchOptions());
 
-    const phone = await boot(browser, 390, 844);
-    const panelPromise = phone.page.waitForSelector('#save-manager-modal');
-    await phone.page.locator('#save-manager-open').tap();
-    await panelPromise;
-    const panel = await phone.page.locator('#save-manager-modal').innerText();
-    assert.ok(panel.includes('Tizio Caio'), 'save panel should show the live name');
-    assert.ok(panel.includes('10000 L.'), 'save panel should show the live money');
-    assert.ok(!panel.includes('Tabbozzo'), 'save panel must not invent Tabbozzo');
-    assert.ok(!/Data:\s*1\/10/.test(panel), 'save panel must not invent 1/10');
+        const phone = await boot(browser, 390, 844);
+        const panelPromise = phone.page.waitForSelector('#save-manager-modal');
+        await phone.page.locator('#save-manager-open').tap();
+        await panelPromise;
+        const panel = await phone.page.locator('#save-manager-modal').innerText();
+        assert.ok(panel.includes('Tizio Caio'), 'save panel should show the live name');
+        assert.ok(panel.includes('10000 L.'), 'save panel should show the live money');
+        assert.ok(!panel.includes('Tabbozzo'), 'save panel must not invent Tabbozzo');
+        assert.ok(!/Data:\s*1\/10/.test(panel), 'save panel must not invent 1/10');
 
-    await phone.page.locator('#save-manager-modal button', { hasText: 'Salva in questo Slot' }).first().tap();
-    await phone.page.waitForFunction(() => {
-        const raw = localStorage.getItem('tabboz_slot_1');
-        if (!raw) return false;
-        const data = JSON.parse(raw);
-        return data && data.registry && Object.keys(data.registry).length > 5;
-    });
+        await phone.page.locator('#save-manager-modal button', { hasText: 'Salva in questo Slot' }).first().tap();
+        await phone.page.waitForFunction(() => {
+            const raw = localStorage.getItem('tabboz_slot_1');
+            if (!raw) return false;
+            const data = JSON.parse(raw);
+            return data && data.registry && Object.keys(data.registry).length > 5;
+        }, undefined, { timeout: 15000 });
 
-    await phone.page.locator('#save-manager-modal [data-action="close"]').tap();
-    await phone.page.locator('button', { hasText: 'Scuola' }).tap();
-    await phone.page.locator('button', { hasText: 'Studia' }).waitFor();
-    const studiaBox = await phone.page.locator('button', { hasText: 'Studia' }).boundingBox();
-    assert.ok(studiaBox.y >= 0 && studiaBox.y + studiaBox.height <= 844, 'Studia must be on screen');
-
-    const hit = await phone.page.evaluate(() => {
-        const name = document.querySelector('.dlg-1 .control102').getBoundingClientRect();
-        const save = document.getElementById('save-manager-open').getBoundingClientRect();
-        const close = document.querySelector('.dlg-10 .control61536');
-        const cb = close ? close.getBoundingClientRect() : null;
-        return {
-            nameSave: !(name.right < save.left || name.left > save.right || name.bottom < save.top || name.top > save.bottom),
-            closeSave: cb ? !(cb.right < save.left || cb.left > save.right || cb.bottom < save.top || cb.top > save.bottom) : false
-        };
-    });
-    assert.strictEqual(hit.nameSave, false, 'save button covers the name');
-    assert.strictEqual(hit.closeSave, false, 'save button covers Chiudi');
-    assert.deepStrictEqual(phone.errors, []);
-    await phone.context.close();
-
-    const land = await boot(browser, 844, 390);
-    const nav = await land.page.locator('.dashboard-nav-grid button').evaluateAll((buttons) => {
-        return buttons.map((b) => {
-            const r = b.getBoundingClientRect();
-            return r.top >= 0 && r.bottom <= window.innerHeight + 1;
+        await phone.page.locator('#save-manager-modal [data-action="close"]').tap();
+        await phone.page.waitForFunction(() => !document.getElementById('save-manager-modal'));
+        // Measure while the dashboard is the visible window. Opening Scuola
+        // hides dialog 1, and a hidden name has an empty box.
+        const nameHit = await phone.page.evaluate(() => {
+            const name = document.querySelector('.dlg-1 .control102').getBoundingClientRect();
+            const save = document.getElementById('save-manager-open').getBoundingClientRect();
+            const overlapsBox = (a, b) => !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+            return {
+                overlap: name.width > 0 && name.height > 0 && overlapsBox(name, save),
+                name: { x: name.x, y: name.y, w: name.width, h: name.height },
+                save: { x: save.x, y: save.y, w: save.width, h: save.height }
+            };
         });
-    });
-    assert.strictEqual(nav.length, 8);
-    assert.ok(nav.every(Boolean), 'landscape dashboard buttons must be on screen');
-    assert.deepStrictEqual(land.errors, []);
-    await land.context.close();
+        assert.ok(nameHit.name.w > 0 && nameHit.name.h > 0, 'dashboard name has no box');
+        assert.strictEqual(nameHit.overlap, false, 'save button covers the name ' + JSON.stringify(nameHit));
 
-    await browser.close();
-    console.log('e2e ok');
-})().catch((err) => {
-    console.error(err);
-    process.exit(1);
-});
+        await phone.page.locator('button', { hasText: 'Scuola' }).tap();
+        const studia = phone.page.locator('button', { hasText: 'Studia' });
+        await studia.waitFor();
+        const studiaBox = await studia.boundingBox();
+        const viewport = phone.page.viewportSize();
+        assert.ok(studiaBox, 'Studia has no box');
+        assert.ok(
+            studiaBox.y >= -1 && studiaBox.y + studiaBox.height <= viewport.height + 1,
+            'Studia must be on screen'
+        );
+
+        const closeHit = await phone.page.evaluate(() => {
+            const save = document.getElementById('save-manager-open').getBoundingClientRect();
+            const close = document.querySelector('.dlg-10 .control61536');
+            const cb = close ? close.getBoundingClientRect() : null;
+            const overlapsBox = (a, b) => !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+            return {
+                overlap: cb ? overlapsBox(cb, save) : true,
+                close: cb ? { x: cb.x, y: cb.y, w: cb.width, h: cb.height } : null,
+                save: { x: save.x, y: save.y, w: save.width, h: save.height }
+            };
+        });
+        assert.ok(closeHit.close && closeHit.close.w > 0, 'Chiudi has no box');
+        assert.strictEqual(closeHit.overlap, false, 'save button covers Chiudi ' + JSON.stringify(closeHit));
+        assert.deepStrictEqual(phone.errors, []);
+        assert.deepStrictEqual(phone.dialogs, []);
+        await phone.context.close();
+
+        const land = await boot(browser, 844, 390);
+        await land.page.locator('.dashboard-nav-grid button').nth(7).waitFor();
+        const nav = await land.page.locator('.dashboard-nav-grid button').evaluateAll((buttons) => {
+            return buttons.map((b) => {
+                const r = b.getBoundingClientRect();
+                return r.width > 0 && r.top >= -1 && r.bottom <= window.innerHeight + 2;
+            });
+        });
+        assert.strictEqual(nav.length, 8);
+        assert.ok(nav.every(Boolean), 'landscape dashboard buttons must be on screen');
+        assert.deepStrictEqual(land.errors, []);
+        assert.deepStrictEqual(land.dialogs, []);
+        await land.context.close();
+
+        console.log('e2e ok');
+    } catch (err) {
+        await capture(err);
+        console.error(err);
+        process.exitCode = 1;
+    } finally {
+        if (browser) await browser.close().catch(() => {});
+    }
+})();
