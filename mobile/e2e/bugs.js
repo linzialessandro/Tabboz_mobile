@@ -194,6 +194,34 @@ async function boot(browser, width, height) {
         assert.strictEqual(closeHit.overlap, false, 'save button covers Chiudi ' + JSON.stringify(closeHit));
         assert.deepStrictEqual(phone.errors, []);
         assert.deepStrictEqual(phone.dialogs, []);
+
+        await phone.page.locator('.dlg-10 .control61536').tap();
+        await phone.page.waitForFunction(() => !document.querySelector('.window.dlg-10'));
+        await phone.page.locator('#save-manager-open').tap();
+        await phone.page.waitForSelector('#save-manager-modal');
+        for (let k = 0; k < 2; k++) {
+            await phone.page.locator('#save-manager-modal button', { hasText: 'Salva in questo Slot' }).first().tap();
+            await phone.page.waitForTimeout(150);
+        }
+        await phone.page.locator('#save-manager-modal button', { hasText: 'Sovrascrivi' }).first().tap();
+        await phone.page.waitForTimeout(150);
+        await phone.page.locator('#save-manager-modal button', { hasText: '✕' }).nth(1).tap();
+        await phone.page.waitForTimeout(150);
+        await phone.page.locator('#save-manager-modal button', { hasText: 'Sovrascrivi' }).first().tap();
+        await phone.page.waitForTimeout(150);
+        await phone.page.locator('#save-manager-modal [data-action="close"]').tap();
+        await phone.page.waitForFunction(() => !document.getElementById('save-manager-modal'));
+
+        await phone.page.locator('.dashboard-nav-grid button', { hasText: 'Lavoro' }).tap();
+        await phone.page.locator('button', { hasText: 'Licenziati' }).tap();
+        const msgBox = phone.page.locator('#tm-overlays .window.messagebox');
+        await msgBox.waitFor({ state: 'visible' });
+        const msgId = await msgBox.getAttribute('id');
+        assert.notStrictEqual(msgId, 'win0', 'messagebox must receive a valid non-zero hWnd');
+        await phone.page.waitForTimeout(450);
+        await msgBox.locator('button', { hasText: 'OK' }).tap();
+        await phone.page.waitForFunction(() => !document.querySelector('#tm-overlays .window.messagebox'));
+        assert.deepStrictEqual(phone.errors, []);
         await phone.context.close();
 
         const land = await boot(browser, 844, 390);

@@ -40,6 +40,7 @@
     const RESOURCE_BASE = TM.RESOURCE_BASE;
 
     const _dialogTemplateCache = new Map();
+    const _windowControls = new Map();
     let _stringsCache = null;
     let _bitmapsListCache = null;
 
@@ -627,6 +628,7 @@
         win.classList.add('dlg-' + dialogNum);
         const silentFlush = TM._silentDialog && Number(TM._silentDialog) === dialogNum;
         if (silentFlush) {
+            TM._silentDialog = 0;
             win.classList.add('tm-silent');
             const wall = document.getElementById('wall' + hWnd);
             if (wall) wall.classList.add('tm-silent');
@@ -656,19 +658,28 @@
 
         ui.ensureDismissable(win, hWnd);
 
-        win.querySelectorAll('.dlg_item').forEach((element) => {
-            const hMenu = ui.extractControlId(element.className);
-            const dataClass = element.getAttribute('data-class');
-            if (hMenu !== null && dataClass && typeof _AllocateControl === 'function') {
-                const lpClassName = _malloc(128);
-                try {
-                    stringToUTF8(dataClass, lpClassName, 128);
-                    _AllocateControl(hInstance, lpClassName, hWnd, hMenu);
-                } finally {
-                    _free(lpClassName);
+        freeWindowControls(hWnd);
+        if (!silentFlush) {
+            const controls = [];
+            win.querySelectorAll('.dlg_item').forEach((element) => {
+                const hMenu = ui.extractControlId(element.className);
+                const dataClass = element.getAttribute('data-class');
+                // Novantotto's 100-slot C handle table never frees child controls
+                // on DestroyWindow, and only BMPView / BMPTipa have a registered
+                // C WndProc (standard controls use hDlg + .controlN directly).
+                if (hMenu !== null && (dataClass === 'BMPView' || dataClass === 'BMPTipa') && typeof _AllocateControl === 'function') {
+                    const lpClassName = _malloc(128);
+                    try {
+                        stringToUTF8(dataClass, lpClassName, 128);
+                        const ctrlPtr = _AllocateControl(hInstance, lpClassName, hWnd, hMenu);
+                        if (ctrlPtr) controls.push(ctrlPtr);
+                    } finally {
+                        _free(lpClassName);
+                    }
                 }
-            }
-        });
+            });
+            if (controls.length > 0) _windowControls.set(hWnd, controls);
+        }
 
         showWindow(hWnd, 1);
         centerWindow(win);
@@ -681,11 +692,36 @@
         }
     }
 
+    function freeWindowControls(hWnd) {
+        const controls = _windowControls.get(hWnd);
+        if (!controls) return;
+        _windowControls.delete(hWnd);
+        const heap = (typeof Module !== 'undefined' && Module.HEAP32) || window.HEAP32;
+        if (!heap) return;
+        for (let i = 0; i < controls.length; i++) {
+            const ptr = controls[i];
+            if (!ptr) continue;
+            const base = ptr >> 2;
+            const classNamePtr = heap[base + 5];
+            if (classNamePtr && typeof _free === 'function') {
+                _free(classNamePtr);
+            }
+            for (let w = 0; w < 10; w++) {
+                heap[base + w] = 0;
+            }
+        }
+    }
+
     function destroyWindow(hWnd) {
+        freeWindowControls(hWnd);
         const wall = document.getElementById('wall' + hWnd);
         const win = document.getElementById('win' + hWnd);
+        const wasSilent = !!(win && win.classList.contains('tm-silent'));
         if (wall) wall.remove();
         if (win) win.remove();
+        if (wasSilent && typeof TM._onSilentFlushDone === 'function') {
+            TM._onSilentFlushDone();
+        }
 
         const remainingWindows = gameWindows();
         if (remainingWindows.length > 0) {

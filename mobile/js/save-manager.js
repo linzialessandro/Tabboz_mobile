@@ -219,7 +219,9 @@
                 resolve(false);
                 return;
             }
+            let finished = false;
             TM._silentDialog = 14;
+            TM._onSilentFlushDone = () => finish(registryHasGame());
             let opened = false;
             const started = Date.now();
             TM.ui.postCommand(hwnd, 140);
@@ -238,8 +240,11 @@
             }, 40);
 
             function finish(ok) {
+                if (finished) return;
+                finished = true;
                 window.clearInterval(timer);
                 TM._silentDialog = 0;
+                TM._onSilentFlushDone = null;
                 _flushing = null;
                 resolve(ok);
             }
@@ -509,9 +514,9 @@
     }
 
     function handleSaveSlot(i) {
+        const meta = getSlotsMetadata();
+        if (meta[i] && !window.confirm(`Vuoi sovrascrivere il salvataggio nello Slot ${i}?`)) return;
         Promise.resolve(flushEngineSave()).then(() => {
-            const meta = getSlotsMetadata();
-            if (meta[i] && !window.confirm(`Vuoi sovrascrivere il salvataggio nello Slot ${i}?`)) return;
             if (!saveToSlot(i)) return;
             renderModal();
         });
