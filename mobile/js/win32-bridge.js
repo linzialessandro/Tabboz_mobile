@@ -281,17 +281,18 @@
 
     function setActiveWindow(hWnd) {
         _activeWindowHwnd = hWnd;
-        _highestZIndex += 10;
         const activeWin = document.getElementById('win' + hWnd);
         if (!activeWin) return;
         /* A silent flush dialog must not hide the screen the player is looking at. */
         if (activeWin.classList.contains('tm-silent')) return;
 
+        const windows = gameWindows();
         const isMsgBox = activeWin.classList.contains('messagebox');
-        const regular = gameWindows().filter((w) => !w.classList.contains('messagebox'));
+        const regular = windows.filter((w) => !w.classList.contains('messagebox'));
         const topRegularWin = regular.length > 0 ? regular[regular.length - 1] : null;
+        _highestZIndex = 50 + windows.length * 10;
 
-        gameWindows().forEach((w) => {
+        windows.forEach((w, idx) => {
             if (w === activeWin) {
                 w.classList.add('active-window');
                 w.style.zIndex = String(_highestZIndex);
@@ -299,10 +300,12 @@
                 const tb = w.querySelector('.title-bar');
                 if (tb) tb.classList.remove('inactive');
             } else if (isMsgBox && w === topRegularWin) {
+                w.style.zIndex = String(50 + idx * 10);
                 w.style.display = 'flex';
                 const tb = w.querySelector('.title-bar');
                 if (tb) tb.classList.add('inactive');
             } else if (!w.classList.contains('messagebox')) {
+                w.style.zIndex = String(50 + idx * 10);
                 w.classList.remove('active-window');
                 w.style.display = 'none';
             }
