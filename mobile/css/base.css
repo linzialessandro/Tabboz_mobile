@@ -31,6 +31,8 @@ html, body {
     height: 100dvh;
     background-color: #004d4d;
     position: relative;
+    z-index: 0;
+    isolation: isolate;
     overflow: hidden;
     margin: 0;
     padding: 0;
