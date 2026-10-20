@@ -242,6 +242,18 @@ async function boot(browser, width, height) {
         await phone.page.waitForTimeout(450);
         await msgBox.locator('button', { hasText: 'OK' }).tap();
         await phone.page.waitForFunction(() => !document.querySelector('#tm-overlays .window.messagebox'));
+
+        await phone.page.evaluate(() => {
+            const prefix = 'HKEY_CURRENT_USER\\Software\\Obscured Truckware\\Tabboz Simulator 32\\';
+            localStorage.setItem(prefix + 'Giorno', '{"":"7"}');
+            localStorage.setItem(prefix + 'Mese', '{"":"12"}');
+        });
+        await phone.page.reload({ waitUntil: 'domcontentloaded' });
+        const holidayBox = phone.page.locator('#tm-overlays .window.messagebox');
+        await holidayBox.waitFor({ state: 'visible' });
+        await phone.page.waitForTimeout(450);
+        await holidayBox.locator('button', { hasText: 'OK' }).tap();
+        await phone.page.locator('button', { hasText: 'TOCCA PER GIOCARE' }).waitFor({ state: 'visible' });
         assert.deepStrictEqual(phone.errors, []);
         await phone.context.close();
 
