@@ -48,8 +48,17 @@
     TM.stopWaiting = stopWaiting;
 
     const OriginalAudio = window.Audio;
+    /* Wavs that exist in resources/wavs. The C code also asks for tabs0401,
+       tabs0601 and tabs1400, which never shipped (not in the original repo
+       either); skip those without a request. Keep in sync with the folder. */
+    const KNOWN_WAVS = new Set(['tabs0000.wav', 'tabs0101.wav', 'tabs0102.wav', 'tabs0201.wav', 'tabs0202.wav', 'tabs0203.wav', 'tabs0204.wav', 'tabs0205.wav', 'tabs0302.wav', 'tabs0303.wav', 'tabs0304.wav', 'tabs0305.wav', 'tabs0402.wav', 'tabs0501.wav', 'tabs0502.wav', 'tabs0503.wav', 'tabs0504.wav', 'tabs0602.wav', 'tabs0603.wav', 'tabs0604.wav', 'tabs0701.wav', 'tabs0801.wav', 'tabs0900.wav', 'tabs1100.wav', 'tabs1200.wav', 'tabs1300.wav', 'tabs1500.wav', 'tabs1501.wav']);
+    TM.KNOWN_WAVS = KNOWN_WAVS;
     window.Audio = function TabbozAudio(src) {
         if (src && typeof src === 'string' && src.indexOf('resources/') === 0) {
+            const wav = src.match(/^resources\/wavs\/([^/?#]+)$/i);
+            if (wav && !KNOWN_WAVS.has(wav[1].toLowerCase())) {
+                return { play: () => Promise.resolve(), pause: () => {} };
+            }
             src = '../' + src;
         }
         const audio = new OriginalAudio(src);

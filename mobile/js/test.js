@@ -239,4 +239,14 @@ test('version.js lists every screen and css file that exists', () => {
     });
 });
 
+test('KNOWN_WAVS in win32-bridge.js matches resources/wavs', () => {
+    const src = fs.readFileSync(path.join(ROOT, 'win32-bridge.js'), 'utf8');
+    const m = src.match(/KNOWN_WAVS = new Set\(\[([^\]]*)\]\)/);
+    assert.ok(m, 'KNOWN_WAVS list not found');
+    const listed = m[1].split(',').map((x) => x.trim().replace(/'/g, '')).filter(Boolean).sort();
+    const files = fs.readdirSync(path.join(ROOT, '..', '..', 'resources', 'wavs'))
+        .filter((f) => f.toLowerCase().endsWith('.wav')).map((f) => f.toLowerCase()).sort();
+    assert.deepStrictEqual(listed, files);
+});
+
 console.log('\n' + passed + ' tests passed');
