@@ -104,19 +104,40 @@ html, body {
     transform: translate(-50%, -50%) !important;
     z-index: 2 !important;
     width: min(92vw, 360px) !important;
+    max-width: min(92vw, 360px) !important;
+    max-height: calc(100dvh - 32px) !important;
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75) !important;
     border-radius: 12px !important;
     border: 2px solid #008080 !important;
     background: #ffffff !important;
     overflow: hidden;
+    display: flex !important;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+.window.messagebox .title-bar {
+    flex-shrink: 0;
+}
+
+.window.messagebox .window-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0;
+    align-items: stretch;
 }
 
 .window.messagebox .container {
     display: flex;
     align-items: flex-start;
     gap: 16px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     padding: 16px 16px 0 16px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .window.messagebox .content {
@@ -124,6 +145,7 @@ html, body {
     line-height: 1.45;
     color: #1f2937;
     font-weight: 500;
+    margin: 0;
 }
 
 .window.messagebox .field-row {
@@ -131,6 +153,8 @@ html, body {
     justify-content: center;
     gap: 10px;
     padding: 0 16px 16px 16px;
+    margin-top: 0;
+    flex-shrink: 0;
 }
 
 .window.messagebox button {
