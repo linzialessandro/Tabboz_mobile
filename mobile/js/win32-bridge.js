@@ -569,6 +569,7 @@
 
         const rawText = typeof lpText === 'number' ? UTF8ToString(lpText) : lpText;
         c.querySelector('.content').innerText = sanitizeItalianText(rawText);
+        dismissLoadingScreen();
         setActiveWindow(hWnd);
         showWindow(hWnd, 1);
         centerWindow(c);
@@ -586,6 +587,7 @@
         const loadingScreen = document.getElementById('loading-screen');
         if (!loadingScreen) return;
         loadingScreen.style.opacity = '0';
+        loadingScreen.style.pointerEvents = 'none';
         loadingScreen.style.transition = 'opacity 0.3s ease';
         setTimeout(() => {
             if (loadingScreen.parentNode) loadingScreen.remove();
