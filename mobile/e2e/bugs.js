@@ -218,6 +218,27 @@ async function boot(browser, width, height) {
         await msgBox.waitFor({ state: 'visible' });
         const msgId = await msgBox.getAttribute('id');
         assert.notStrictEqual(msgId, 'win0', 'messagebox must receive a valid non-zero hWnd');
+        const msgFit = await phone.page.evaluate(() => {
+            const m = document.querySelector('#tm-overlays .window.messagebox');
+            const c = m.querySelector('.content');
+            const orig = c.innerText;
+            c.innerText = orig + '\n\n' + Array(30).fill('Errore irrecuperabile: Quando andrai meglio a scuola potrai avere più soldi.').join(' ');
+            const r = m.getBoundingClientRect();
+            const ok = m.querySelector('button.control1').getBoundingClientRect();
+            const tb = m.querySelector('.title-bar').getBoundingClientRect();
+            c.innerText = orig;
+            return {
+                y: r.y,
+                bottom: r.y + r.height,
+                w: r.width,
+                okBottom: ok.y + ok.height,
+                tbTop: tb.y,
+                vh: window.innerHeight
+            };
+        });
+        assert.ok(msgFit.w >= 300, 'messagebox should use available width: ' + JSON.stringify(msgFit));
+        assert.ok(msgFit.y >= 0 && msgFit.bottom <= msgFit.vh, 'long messagebox must fit inside viewport: ' + JSON.stringify(msgFit));
+        assert.ok(msgFit.tbTop >= 0 && msgFit.okBottom <= msgFit.vh, 'messagebox title bar and OK must stay visible: ' + JSON.stringify(msgFit));
         await phone.page.waitForTimeout(450);
         await msgBox.locator('button', { hasText: 'OK' }).tap();
         await phone.page.waitForFunction(() => !document.querySelector('#tm-overlays .window.messagebox'));
