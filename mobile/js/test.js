@@ -239,6 +239,12 @@ test('version.js lists every screen and css file that exists', () => {
     });
 });
 
+test('home.css defines compact dashboard rules for short portrait and landscape viewports', () => {
+    const homeCss = fs.readFileSync(path.join(ROOT, '..', 'css', 'home.css'), 'utf8');
+    assert.ok(/@media\s*\(max-height:\s*760px\)/.test(homeCss), 'missing short-portrait media query in home.css');
+    assert.ok(/@media\s*\(max-height:\s*520px\)/.test(homeCss), 'missing landscape media query in home.css');
+});
+
 test('KNOWN_WAVS in win32-bridge.js matches resources/wavs', () => {
     const src = fs.readFileSync(path.join(ROOT, 'win32-bridge.js'), 'utf8');
     const m = src.match(/KNOWN_WAVS = new Set\(\[([^\]]*)\]\)/);

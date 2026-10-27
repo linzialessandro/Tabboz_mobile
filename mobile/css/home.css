@@ -397,6 +397,57 @@
     border: 1px solid #fde68a;
 }
 
+/* Short portrait phones (e.g. 360×640): compact hero + buttons so Compagnia, Famiglia, and Info stay above the fold. */
+@media (max-height: 760px) {
+    .window.dlg-1 .mobile-dashboard-container {
+        gap: 8px;
+        padding-bottom: 12px;
+    }
+
+    .dashboard-header-card {
+        flex-direction: row;
+        justify-content: center;
+        gap: 10px;
+        padding: 6px 12px;
+    }
+
+    .window.dlg-1 .control102,
+    .window.dlg-1 .control157 {
+        width: auto !important;
+    }
+
+    .window.dlg-1 canvas.control101 {
+        width: 96px !important;
+        min-width: 96px !important;
+        height: 212px !important;
+    }
+
+    .dashboard-stats-col {
+        gap: 4px;
+    }
+
+    .stat-card {
+        padding: 4px 10px;
+    }
+
+    .dashboard-nav-grid {
+        gap: 6px;
+        margin-top: 0;
+    }
+
+    .dashboard-nav-grid button {
+        height: 42px !important;
+        min-height: 42px !important;
+        font-size: 14px !important;
+    }
+
+    .window.dlg-1 button.control120 {
+        height: 38px !important;
+        min-height: 38px !important;
+        margin-top: 0 !important;
+    }
+}
+
 /* Landscape phones: the 300px portrait would push Scooter/Negozi/… below the fold. */
 @media (max-height: 520px) {
     .window.dlg-1 .mobile-dashboard-container {

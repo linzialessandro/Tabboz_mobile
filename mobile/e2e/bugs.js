@@ -271,6 +271,33 @@ async function boot(browser, width, height) {
         assert.deepStrictEqual(land.dialogs, []);
         await land.context.close();
 
+        const shortPortrait = await boot(browser, 360, 640);
+        await shortPortrait.page.locator('.dashboard-nav-grid button').nth(7).waitFor();
+        const shortHits = await shortPortrait.page.evaluate(() => {
+            const buttons = [
+                ...document.querySelectorAll('.dashboard-nav-grid button'),
+                ...document.querySelectorAll('.window.dlg-1 button.control120')
+            ];
+            return buttons.map((b) => {
+                const r = b.getBoundingClientRect();
+                const cx = r.left + r.width / 2;
+                const cy = r.top + r.height / 2;
+                const inViewport = r.width > 0 && r.height > 0 && r.top >= -1 && r.bottom <= window.innerHeight + 1 && r.left >= -1 && r.right <= window.innerWidth + 1;
+                const hit = inViewport ? document.elementFromPoint(cx, cy) : null;
+                return {
+                    label: (b.innerText || '').replace(/\s+/g, ' ').trim(),
+                    top: Math.round(r.top),
+                    bottom: Math.round(r.bottom),
+                    ok: Boolean(hit && (hit === b || b.contains(hit)))
+                };
+            });
+        });
+        assert.strictEqual(shortHits.length, 9, 'expected 8 nav buttons + Info button at 360x640');
+        assert.ok(shortHits.every((h) => h.ok), '360x640 dashboard buttons must pass elementFromPoint: ' + JSON.stringify(shortHits));
+        assert.deepStrictEqual(shortPortrait.errors, []);
+        assert.deepStrictEqual(shortPortrait.dialogs, []);
+        await shortPortrait.context.close();
+
         console.log('e2e ok');
     } catch (err) {
         await capture(err);
