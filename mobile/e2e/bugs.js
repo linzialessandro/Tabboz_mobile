@@ -245,6 +245,45 @@ async function boot(browser, width, height) {
 
         await phone.page.evaluate(() => {
             const prefix = 'HKEY_CURRENT_USER\\Software\\Obscured Truckware\\Tabboz Simulator 32\\';
+            localStorage.setItem(prefix + 'Soldi', '{"":"500"}');
+            localStorage.setItem(prefix + 'Fortuna', '{"":"100"}');
+            localStorage.setItem(prefix + 'Giorno', '{"":"2"}');
+            localStorage.setItem(prefix + 'Mese', '{"":"10"}');
+            localStorage.setItem(prefix + 'GiornoSet', '{"":"1"}');
+        });
+        await phone.page.reload({ waitUntil: 'domcontentloaded' });
+        const startShop = phone.page.locator('button', { hasText: 'TOCCA PER GIOCARE' });
+        await startShop.waitFor({ state: 'visible' });
+        await startShop.tap();
+        await phone.page.locator('.dashboard-nav-grid button', { hasText: 'Negozi' }).waitFor({ state: 'visible' });
+        await phone.page.locator('.dashboard-nav-grid button', { hasText: 'Negozi' }).tap();
+        await phone.page.locator('.window.dlg-8').waitFor({ state: 'visible' });
+        const parseLire = (s) => parseInt(String(s).replace(/[^\d]/g, ''), 10);
+        const soldiBefore = parseLire(await phone.page.locator('.window.dlg-8 .control120').innerText());
+        const blueRider = phone.page.locator('.window.dlg-8 button', { hasText: 'Blue Rider' });
+        await blueRider.scrollIntoViewIfNeeded();
+        await blueRider.tap();
+        await phone.page.locator('.window.dlg-84').waitFor({ state: 'visible' });
+        await phone.page.waitForTimeout(50);
+        await phone.page.locator('.window.dlg-84 button.control1').tap();
+        for (let k = 0; k < 4; k++) {
+            if (await phone.page.locator('.window.dlg-8.active-window').count()) break;
+            const mbBtn = phone.page.locator('#tm-overlays .window.messagebox button.control1, #tm-overlays .window.messagebox button.control6').first();
+            if (await mbBtn.isVisible().catch(() => false)) {
+                await phone.page.waitForTimeout(450);
+                await mbBtn.tap();
+            } else {
+                const evBtn = phone.page.locator('#screen .window.active-window:not(.dlg-8):not(.dlg-84) button.control1, #screen .window.active-window:not(.dlg-8):not(.dlg-84) button.control2').first();
+                if (await evBtn.isVisible().catch(() => false)) await evBtn.tap();
+            }
+            await phone.page.waitForTimeout(200);
+        }
+        await phone.page.waitForFunction(() => !document.querySelector('.window.dlg-84'));
+        const soldiAfter = parseLire(await phone.page.locator('.window.dlg-8 .control120').innerText());
+        assert.ok(soldiAfter < soldiBefore, 'buying pre-selected shop item without touching a card must decrease Soldi (' + soldiBefore + ' -> ' + soldiAfter + ')');
+
+        await phone.page.evaluate(() => {
+            const prefix = 'HKEY_CURRENT_USER\\Software\\Obscured Truckware\\Tabboz Simulator 32\\';
             localStorage.setItem(prefix + 'Giorno', '{"":"7"}');
             localStorage.setItem(prefix + 'Mese', '{"":"12"}');
         });

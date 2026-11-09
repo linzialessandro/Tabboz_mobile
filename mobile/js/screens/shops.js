@@ -326,6 +326,7 @@
             if (i === 0) {
                 radio.checked = true;
                 card.classList.add('selected');
+                setTimeout(() => postCommand(hWnd, radioId), 0);
             }
             productsList.appendChild(card);
         }

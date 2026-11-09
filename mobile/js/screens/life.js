@@ -196,7 +196,10 @@
                 card.classList.add('selected');
             });
 
-            if (i === 1) card.classList.add('selected');
+            if (i === 1) {
+                card.classList.add('selected');
+                setTimeout(() => postCommand(hWnd, radioId), 0);
+            }
             discosList.appendChild(card);
         }
         container.appendChild(discosList);
