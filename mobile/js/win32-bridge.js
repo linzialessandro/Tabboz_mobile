@@ -695,6 +695,9 @@
         showWindow(hWnd, 1);
         centerWindow(win);
 
+        /* Splash can also dismiss itself on a timer. Arm once the game UI is up. */
+        if (!silentFlush && dialogNum !== TM.DLG.SPLASH) armHistoryBack();
+
         if (silentFlush) {
             /* Configuration IDOK calls SalvaTutto without changing skill/sound. */
             window.setTimeout(function () {
@@ -862,6 +865,59 @@
         element.style.display = 'flex';
         ui.overlayRoot().appendChild(element);
     }
+
+    /* System back must dismiss the top window instead of leaving the PWA.
+       The ✕ handlers already post the right WM_COMMAND; popstate just
+       activates that same control, then pushes a sentinel so the next
+       back is caught too. The save manager keeps its own Escape path. */
+    let _historyBackArmed = false;
+
+    function pushHistoryTrap() {
+        history.pushState({ tabboz: 1 }, '');
+    }
+
+    function visibleTop(selector) {
+        const nodes = document.querySelectorAll(selector);
+        for (let i = nodes.length - 1; i >= 0; i--) {
+            const node = nodes[i];
+            if (node.classList.contains('tm-silent')) continue;
+            if (node.style.display === 'none') continue;
+            if (node.getClientRects().length === 0) continue;
+            return node;
+        }
+        return null;
+    }
+
+    function invokeCloseControl(win) {
+        if (!win) return;
+        const closeBtn = win.querySelector('.control61536, .close-btn');
+        if (closeBtn) closeBtn.click();
+    }
+
+    function onHistoryPop() {
+        try {
+            const message = visibleTop('#tm-overlays .window.messagebox');
+            if (message) {
+                invokeCloseControl(message);
+            } else {
+                const active = visibleTop('#screen .window.active-window');
+                if (active && !active.classList.contains('dlg-1') && !active.classList.contains('messagebox')) {
+                    invokeCloseControl(active);
+                }
+            }
+        } finally {
+            pushHistoryTrap();
+        }
+    }
+
+    function armHistoryBack() {
+        if (_historyBackArmed) return;
+        _historyBackArmed = true;
+        window.addEventListener('popstate', onHistoryPop);
+        pushHistoryTrap();
+    }
+
+    TM.armHistoryBack = armHistoryBack;
 
     function startGame() {
         if (_gameStarted) return;

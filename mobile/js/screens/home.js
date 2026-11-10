@@ -225,6 +225,11 @@
         startBtn.innerHTML = '⚡ TOCCA PER GIOCARE ⚡';
 
         attachButtonHandler(startBtn, 202, hWnd);
+        const startGameClick = startBtn.onclick;
+        startBtn.onclick = function (event) {
+            if (typeof TM.armHistoryBack === 'function') TM.armHistoryBack();
+            startGameClick.call(this, event);
+        };
         markBound(container);
         container.addEventListener('click', (e) => {
             if (e.target !== startBtn) startBtn.click();

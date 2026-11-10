@@ -4,7 +4,7 @@
  *   python3 server.py
  *   node mobile/e2e/bugs.js
  *
- * Touch, 390×844 portrait and 844×390 landscape.
+ * Touch, 390×844 portrait, 844×390 landscape, and 360×640.
  * Uses Playwright's Chromium when TABBOZ_BROWSER=playwright (CI).
  * Otherwise uses CHROME, or /usr/bin/google-chrome when that file exists.
  * On failure, screenshots and error.txt land in mobile/e2e/artifacts/.
@@ -127,6 +127,55 @@ async function boot(browser, width, height) {
     return { context, page, errors, dialogs };
 }
 
+async function assertSystemBack(session) {
+    const page = session.page;
+    const url = page.url();
+    const armed = await page.evaluate(() => history.state && history.state.tabboz);
+    assert.strictEqual(armed, 1, 'starting the game should arm history');
+
+    await page.locator('.dashboard-nav-grid button', { hasText: 'Negozi' }).tap();
+    await page.locator('.window.dlg-8').waitFor({ state: 'visible' });
+    const zoccolaro = page.locator('.window.dlg-8 button', { hasText: 'Zoccolaro' });
+    await zoccolaro.scrollIntoViewIfNeeded();
+    await zoccolaro.tap();
+    await page.locator('.window.dlg-81').waitFor({ state: 'visible' });
+
+    await page.goBack({ waitUntil: 'commit' });
+    assert.strictEqual(page.url(), url, 'back from Zoccolaro left the app: ' + page.url());
+    await page.waitForFunction(() => !document.querySelector('.window.dlg-81'));
+    await page.locator('.window.dlg-8').waitFor({ state: 'visible' });
+
+    await page.goBack({ waitUntil: 'commit' });
+    assert.strictEqual(page.url(), url, 'back from Negozi left the app: ' + page.url());
+    await page.waitForFunction(() => !document.querySelector('.window.dlg-8'));
+    await page.locator('.window.dlg-1 .dashboard-nav-grid button', { hasText: 'Scuola' }).waitFor({ state: 'visible' });
+
+    await page.goBack({ waitUntil: 'commit' });
+    assert.strictEqual(page.url(), url, 'back on the dashboard left the app: ' + page.url());
+    const stillHome = await page.evaluate(() => history.state && history.state.tabboz);
+    assert.strictEqual(stillHome, 1, 'dashboard back must keep the history trap');
+    await page.locator('.window.dlg-1 .dashboard-nav-grid button', { hasText: 'Scuola' }).waitFor({ state: 'visible' });
+
+    await page.locator('.dashboard-nav-grid button', { hasText: 'Lavoro' }).tap();
+    await page.locator('.window.dlg-13').waitFor({ state: 'visible' });
+    const licenziati = page.locator('.window.dlg-13 button', { hasText: 'Licenziati' });
+    await licenziati.scrollIntoViewIfNeeded();
+    await licenziati.tap();
+    await page.locator('#tm-overlays .window.messagebox').waitFor({ state: 'visible' });
+    await page.goBack({ waitUntil: 'commit' });
+    assert.strictEqual(page.url(), url, 'back from a message box left the app: ' + page.url());
+    await page.waitForFunction(() => !document.querySelector('#tm-overlays .window.messagebox'));
+    await page.locator('.window.dlg-13').waitFor({ state: 'visible' });
+    await page.locator('.dlg-13 .control61536').tap();
+    await page.waitForFunction(() => !document.querySelector('.window.dlg-13'));
+
+    await page.locator('#save-manager-open').tap();
+    await page.locator('#save-manager-modal').waitFor({ state: 'visible' });
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => !document.getElementById('save-manager-modal'));
+    await page.locator('.dashboard-nav-grid button', { hasText: 'Scuola' }).waitFor({ state: 'visible' });
+}
+
 (async () => {
     clearShots();
     let browser;
@@ -134,6 +183,7 @@ async function boot(browser, width, height) {
         browser = await chromium.launch(launchOptions());
 
         const phone = await boot(browser, 390, 844);
+        await assertSystemBack(phone);
         const panelPromise = phone.page.waitForSelector('#save-manager-modal');
         await phone.page.locator('#save-manager-open').tap();
         await panelPromise;
@@ -297,6 +347,7 @@ async function boot(browser, width, height) {
         await phone.context.close();
 
         const land = await boot(browser, 844, 390);
+        await assertSystemBack(land);
         await land.page.locator('.dashboard-nav-grid button').nth(7).waitFor();
         const nav = await land.page.locator('.dashboard-nav-grid button').evaluateAll((buttons) => {
             return buttons.map((b) => {
@@ -311,6 +362,7 @@ async function boot(browser, width, height) {
         await land.context.close();
 
         const shortPortrait = await boot(browser, 360, 640);
+        await assertSystemBack(shortPortrait);
         await shortPortrait.page.locator('.dashboard-nav-grid button').nth(7).waitFor();
         const shortHits = await shortPortrait.page.evaluate(() => {
             const buttons = [
